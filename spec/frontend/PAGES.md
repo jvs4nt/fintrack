@@ -1,0 +1,91 @@
+# Frontend — Páginas e UI
+
+## Mapa de páginas
+
+| ID (`currentPage`) | Arquivo | API principal |
+|--------------------|---------|---------------|
+| dashboard | `Dashboard.tsx` | `dashboard.getSummary(year, month)` |
+| months | `Months.tsx` | `months.*`, `installments.getByMonth` |
+| fixed | `Fixed.tsx` | `fixedIncomes.*`, `fixedExpenses.*` |
+| cards | `Cards.tsx` | `cards.*`, `installments.*` |
+| savings | `Savings.tsx` | `savings.*` |
+| settings | inline em `App.tsx` | `settings.get`, `settings.update` |
+| agent | modal + `Agent.tsx` | `agent.chat` |
+
+## Dashboard
+
+- Props: `selectedYear`, `selectedMonth` (do App — **não** tem seletor próprio de mês)
+- Exibe: saldo (`summary.balance`), cards ganhos/gastos/saldo, alerta `nextDueCard`, gráfico barras CSS (`sixMonthsData`), últimos 5 `lastEntries`
+- Pode usar `as any` no destructuring — tipar ao refatorar
+
+## Months
+
+- Seletor de mês (tabs Jan–Dez) e ano (`years`: atual ±5)
+- Ao mudar mês: `getEntries` + `syncFixed` (ou equivalente no load) + `installments.getByMonth`
+- Seções: Ganhos | Gastos | Parcelas | Resumo
+- Modal CRUD avulso: `months.createEntry` / `updateEntry` / `deleteEntry`
+- Entradas fixas: `isFixed` — cuidado ao editar (não altera template fixo)
+
+## Fixed
+
+- Duas colunas/listas: ganhos e gastos fixos
+- Toggle `active` via update
+- Aviso UX: alterar fixo não retroage em `MonthEntry` já criados no sync
+
+## Cards
+
+- Grid de cards visuais (cor `card.color`, últimos 4 dígitos)
+- Badge vencimento se `daysUntilDue <= 5` (cálculo pode ser no front ao listar)
+- Barra de limite usado (soma parcelas ativas / limit)
+- CRUD parcelamentos vinculados a `cardId`
+
+## Savings
+
+- Cards por reserva; tipos com labels pt-BR
+- `updateAmount` abre fluxo de novo valor + histórico
+- Gráfico pizza CSS por tipo
+- Total consolidado no topo
+
+## Agent (modal)
+
+- FAB fixo `.agent-fab`
+- Overlay `.agent-modal-overlay`, balloon `.agent-modal-balloon`
+- Animação close ~220ms (`isAgentModalClosing`)
+- ESC fecha; `body overflow hidden` quando aberto
+- Sugestões: "gastei X no Y hoje", "resumo do mês", confirmação "sim" para delete
+
+## Settings (App.tsx)
+
+- Input número 1–31 para `payday`
+- Salvar recalcula `selectedYear/Month` e `alert` de sucesso
+
+## Classes CSS frequentes
+
+| Classe | Uso |
+|--------|-----|
+| `.app-container` | layout sidebar + main |
+| `.sidebar`, `.nav-link.active` | navegação |
+| `.main-content` | área da página |
+| `.page-header`, `.page-title`, `.page-subtitle` | cabeçalho |
+| `.card`, `.card-header`, `.card-body` | containers |
+| `.btn`, `.btn-primary`, `.btn-danger`, `.btn-sm` | ações |
+| `.form-group`, `.form-label`, `.form-input`, `.form-select` | formulários |
+| `.stat-card`, `.stat-value`, `.stat-label` | métricas dashboard |
+| `.chart-bar`, `.chart-pie` | gráficos CSS puros |
+| `.credit-card-visual` | cartão estilizado |
+| `.agent-chat-container`, `.agent-bubble` | chat |
+| `.loading`, `.error-message` | estados |
+
+## Design tokens (`App.css` :root)
+
+- Fundo: `--bg-primary` `#0a0a0f`
+- Superfícies: `--bg-secondary`, `--bg-tertiary`
+- Acento: `--accent-primary` `#00e5a0`
+- Perigo: `--accent-danger` `#ff4d6d`
+- Fontes: `--font-display` (DM Mono), `--font-ui` (Sora) — carregadas no `index.html`
+
+## Acessibilidade / UX existente
+
+- `confirm()` antes de deletes
+- `alert()` em erros de settings
+- Loading textual "Carregando..." / "Iniciando FinTrack..."

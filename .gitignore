@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Environment (keep examples)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# SQLite (local dev database)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Build / cache
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+*.swp
+*.swo
+*~
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Optional: local Cursor agent plans (rules in .cursor/ are kept)
+.cursor/plans/

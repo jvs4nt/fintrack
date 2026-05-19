@@ -1,0 +1,18 @@
+---
+description: Contexto backend FinTrack (spec + padrões)
+globs: backend/**/*
+alwaysApply: false
+---
+
+# Backend FinTrack
+
+Leia antes de editar:
+
+1. `spec/backend/CONTEXT.md` — estrutura, sync fixos, parcelas, agente
+2. `spec/backend/API.md` — rotas e payloads
+3. `spec/backend/DATA-MODEL.md` — se tocar Prisma/schema
+
+- Prisma: `import prisma from '../prisma/client'`
+- Um router por domínio em `backend/routes/`; registrar em `server.ts`
+- Sync fixos duplicado em `months` e `dashboard` — manter lógica alinhada
+- Agente: rule-based em `routes/agent.ts` (sem LLM externo)

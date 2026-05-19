@@ -1,0 +1,106 @@
+// FinTrack - Schema Prisma
+// Banco de dados SQLite para organizador financeiro pessoal
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./fintrack.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Ganhos Fixos - Receitas recorrentes mensais
+model FixedIncome {
+  id          Int      @id @default(autoincrement())
+  name        String
+  amount      Float
+  dayOfMonth  Int
+  category    String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+// Gastos Fixos - Despesas recorrentes mensais
+model FixedExpense {
+  id             Int      @id @default(autoincrement())
+  name           String
+  amount         Float
+  dayOfMonth     Int
+  category       String
+  paymentMethod  String
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}
+
+// Lançamentos Mensais - Entradas e saídas do mês
+model MonthEntry {
+  id            Int      @id @default(autoincrement())
+  year          Int
+  month         Int      // 1-12
+  type          String   // "income" | "expense"
+  description   String
+  amount        Float
+  date          String
+  category      String
+  paymentMethod String?
+  note          String?
+  isFixed       Boolean  @default(false)
+  fixedRefId    Int?
+  createdAt     DateTime @default(now())
+}
+
+// Cartões de Crédito
+model Card {
+  id             Int            @id @default(autoincrement())
+  name           String
+  lastFourDigits String?
+  color          String
+  closingDay     Int
+  dueDay         Int
+  limit          Float
+  createdAt      DateTime       @default(now())
+  installments   Installment[]
+}
+
+// Parcelas de Cartão de Crédito
+model Installment {
+  id               Int      @id @default(autoincrement())
+  description      String
+  totalAmount      Float
+  totalInstallments Int
+  currentInstallment Int    @default(1)
+  firstPaymentDate String
+  cardId           Int
+  card             Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  status           String   @default("active") // "active" | "paid"
+  createdAt        DateTime @default(now())
+}
+
+// Reservas Financeiras / Investimentos
+model Saving {
+  id          Int            @id @default(autoincrement())
+  name        String
+  institution String
+  type        String   // "poupanca" | "cdb" | "tesouro" | "acoes" | "fiis" | "cripto" | "outros"
+  amount      Float
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  history     SavingHistory[]
+}
+
+// Histórico de Atualizações de Reservas
+model SavingHistory {
+  id        Int      @id @default(autoincrement())
+  savingId  Int
+  saving    Saving   @relation(fields: [savingId], references: [id], onDelete: Cascade)
+  amount    Float
+  date      DateTime @default(now())
+}
+
+// Configurações Globais
+model Settings {
+  id        Int      @id
+  payday    Int      @default(1) // Dia do mês em que o usuário recebe/planejamento vira
+  updatedAt DateTime @updatedAt
+}

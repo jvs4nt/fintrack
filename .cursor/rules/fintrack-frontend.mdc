@@ -1,0 +1,20 @@
+---
+description: Contexto frontend FinTrack (spec + padrões)
+globs: frontend/**/*
+alwaysApply: false
+---
+
+# Frontend FinTrack
+
+Leia antes de editar:
+
+1. `spec/frontend/CONTEXT.md` — App shell, useApi, tipos
+2. `spec/frontend/PAGES.md` — páginas e classes CSS
+3. `spec/CONVENTIONS.md` — moeda pt-BR, payday, padrões UI
+
+- HTTP só via `hooks/useApi.ts`; tipos em `types.ts`
+- Navegação em `App.tsx` (`currentPage`), sem React Router
+- Estilos: variáveis em `App.css` (`--accent-primary`, etc.)
+- Agente: modal + `Agent.tsx` com `embedded`; estado `pendingAction` entre turns
+
+Se a API mudar, alinhar `types.ts` com `spec/backend/API.md`.

@@ -1,0 +1,30 @@
+---
+description: Spec-driven design — leia spec/ antes de implementar no FinTrack
+alwaysApply: true
+---
+
+# FinTrack — Spec Driven Design
+
+Antes de alterar código, consulte `spec/` (não releia o repo inteiro). Fonte de verdade do contrato: `spec/backend/API.md` e `spec/backend/DATA-MODEL.md`.
+
+## O que ler
+
+| Tarefa | Arquivos |
+|--------|----------|
+| Visão / onboarding | `spec/PROJECT.md` |
+| Roadmap / o que implementar | `spec/ROADMAP.md` |
+| Backend (rotas, Prisma, agente, sync) | `spec/backend/CONTEXT.md` + `API.md` + `DATA-MODEL.md` |
+| Frontend (páginas, UI, useApi) | `spec/frontend/CONTEXT.md` + `PAGES.md` |
+| Locale, erros, payday, CSS | `spec/CONVENTIONS.md` |
+
+Índice completo: `spec/README.md`.
+
+## Regras rápidas
+
+- API via `frontend/src/hooks/useApi.ts` — não `fetch` solto nas páginas.
+- Novo endpoint: router em `backend/routes/` → `server.ts` → `useApi` + `types.ts` → atualizar `spec/backend/API.md`.
+- Novo model Prisma: schema → migrate → atualizar `spec/backend/DATA-MODEL.md`.
+- Stack: Express + Prisma + SQLite (backend); React + Vite + CSS puro (frontend). Sem auth, sem React Router.
+- README raiz pode estar desatualizado (cita `.js`); preferir `spec/` sobre ele.
+
+Ao mudar contrato API ou schema, **atualize os arquivos spec correspondentes** na mesma tarefa.
