@@ -1,18 +1,20 @@
 import express, { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { getUserId, routeParamInt } from '../types/auth';
 
 const router = express.Router();
 
-// Buscar configurações globais
 router.get('/', async (req: Request, res: Response) => {
   try {
+    const userId = getUserId(req);
+
     let settings = await prisma.settings.findUnique({
-      where: { id: 1 }
+      where: { userId },
     });
-    
+
     if (!settings) {
       settings = await prisma.settings.create({
-        data: { id: 1, payday: 1 }
+        data: { userId, payday: 1 },
       });
     }
     res.json(settings);
@@ -22,11 +24,11 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Atualizar payday
 router.put('/', async (req: Request, res: Response) => {
   try {
+    const userId = getUserId(req);
     const { payday } = req.body;
-    
+
     if (payday === undefined) {
       return res.status(400).json({ error: 'Campo payday é obrigatório' });
     }
@@ -37,11 +39,11 @@ router.put('/', async (req: Request, res: Response) => {
     }
 
     const settings = await prisma.settings.upsert({
-      where: { id: 1 },
+      where: { userId },
       update: { payday: paydayInt },
-      create: { id: 1, payday: paydayInt }
+      create: { userId, payday: paydayInt },
     });
-    
+
     res.json(settings);
   } catch (error) {
     console.error('Erro ao atualizar settings:', error);

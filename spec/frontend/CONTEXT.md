@@ -8,22 +8,27 @@ React 18 + Vite 6 + TypeScript. **Sem** React Router, Redux, TanStack Query ou U
 
 ```
 frontend/src/
-├── main.tsx           # ReactDOM.createRoot
-├── App.tsx            # Shell: sidebar, páginas, agent modal, payday init
-├── App.css            # Todos os estilos (design system inline)
-├── types.ts           # Interfaces espelhando API
-├── hooks/
-│   └── useApi.ts      # Único cliente HTTP
+├── main.tsx              # AuthProvider + Toast + Confirm
+├── App.tsx               # Gate de login, shell, agent modal
+├── lib/supabase.ts       # Cliente Supabase Auth
+├── context/AuthContext.tsx
+├── App.css
+├── types.ts
+├── hooks/useApi.ts       # HTTP + Bearer JWT
+├── components/           # Toast, Confirm
 └── pages/
+    ├── Login.tsx
     ├── Dashboard.tsx
     ├── Months.tsx
-    ├── Fixed.tsx
-    ├── Cards.tsx
-    ├── Savings.tsx
-    └── Agent.tsx
+    └── …
 ```
 
-Não existe pasta `components/` — UI composta inline nas páginas.
+## Autenticação
+
+- `AuthProvider` envolve o app em `main.tsx`
+- Sem sessão → `Login.tsx` (e-mail/senha, criar conta, magic link)
+- `useApi` envia `Authorization: Bearer` em cada request; 401 → logout
+- Ajustes: botão **Sair** (`signOut`)
 
 ## App shell (`App.tsx`)
 
@@ -49,7 +54,7 @@ Props repassadas às páginas com mês:
 ## useApi (`hooks/useApi.ts`)
 
 - Base: `import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333/api'`
-- Função interna `fetchApi<T>(endpoint, options)`
+- Função interna `fetchApi<T>(endpoint, options)` — injeta `Authorization: Bearer` da sessão Supabase
 - Retorna objeto com namespaces: `fixedIncomes`, `fixedExpenses`, `months`, `cards`, `installments`, `savings`, `dashboard`, `settings`, `agent`
 - Erro: `throw new Error(errorData.error || status)`
 

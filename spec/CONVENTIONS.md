@@ -10,10 +10,11 @@
 ## API
 
 - Prefixo: `/api`
+- **Auth:** header `Authorization: Bearer <supabase_access_token>` em todas as rotas exceto `GET /health`
 - JSON request/response; `Content-Type: application/json`
 - DELETE bem-sucedido: **204** sem body
-- Erros: `{ error: string }`; 500 pode incluir `message` em `NODE_ENV=development`
-- Prisma `P2025` → 404 com `{ error: '...não encontrado' }` nas rotas CRUD
+- Erros: `{ error: string }`; **401** → frontend faz logout
+- 500 pode incluir `message` em `NODE_ENV=development`
 
 ## Frontend
 
@@ -21,8 +22,9 @@
 - **Sem biblioteca de estado global** — cada página gerencia loading/error/data
 - API via hook `useApi()` em `hooks/useApi.ts` — não chamar `fetch` direto nas páginas
 - Tipos em `frontend/src/types.ts` — manter sincronizado com respostas reais da API
-- Confirmação antes de deletar: `window.confirm`
-- Feedback de erro: `alert()` ou mensagem inline `.error-message`
+- Confirmação: `useConfirm()` de `components/ConfirmDialog.tsx` (inclui `choose()` para múltiplas opções)
+- Feedback: `useToast()` de `components/ToastProvider.tsx` — não usar `alert()` / `window.confirm`
+- Erros de carregamento: mensagem inline `.error-message`
 
 ## CSS
 

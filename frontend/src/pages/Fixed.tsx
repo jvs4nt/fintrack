@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
-import { FixedIncome, FixedExpense } from '../types';
+import { useToast } from '../components/ToastProvider';
+import { useConfirm } from '../components/ConfirmDialog';
+import { Category, FixedIncome, FixedExpense } from '../types';
 
-// Página de Fixos - Ganhos e Gastos Recorrentes
-function Fixed() {
+interface FixedProps {
+  selectedYear: number;
+  selectedMonth: number;
+}
+
+function Fixed({ selectedYear, selectedMonth }: FixedProps) {
   const api = useApi();
+  const toast = useToast();
+  const { confirm, choose } = useConfirm();
   const [loading, setLoading] = useState<boolean>(true);
   const [fixedIncomes, setFixedIncomes] = useState<FixedIncome[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
@@ -19,21 +27,8 @@ function Fixed() {
     paymentMethod: '',
     active: true,
   });
-
-  // Categorias
-  const incomeCategories = ['Trabalho', 'Extra', 'Investimento', 'Aluguel', 'Outros'];
-  const expenseCategories = [
-    'Moradia',
-    'Alimentação',
-    'Transporte',
-    'Saúde',
-    'Educação',
-    'Entretenimento',
-    'Vestuário',
-    'Serviços',
-    'Assinaturas',
-    'Outros',
-  ];
+  const [incomeCategories, setIncomeCategories] = useState<Category[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<Category[]>([]);
 
   const paymentMethods = ['PIX', 'Débito', 'Crédito', 'Dinheiro', 'Boleto', 'Transferência'];
 
@@ -45,17 +40,56 @@ function Fixed() {
   async function loadFixedData() {
     setLoading(true);
     try {
-      const [incomes, expenses] = await Promise.all([
+      const [incomes, expenses, incomeCats, expenseCats] = await Promise.all([
         api.fixedIncomes.getAll(),
         api.fixedExpenses.getAll(),
+        api.categories.getAll('income'),
+        api.categories.getAll('expense'),
       ]);
       setFixedIncomes(incomes || []);
       setFixedExpenses(expenses || []);
+      setIncomeCategories(incomeCats || []);
+      setExpenseCategories(expenseCats || []);
     } catch (err) {
       console.error('Erro ao carregar fixos:', err);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handlePropagateAfterEdit(
+    type: 'income' | 'expense',
+    id: number
+  ) {
+    const monthLabel = new Date(selectedYear, selectedMonth - 1).toLocaleDateString('pt-BR', {
+      month: 'long',
+      year: 'numeric',
+    });
+
+    const choice = await choose({
+      title: 'Propagar alterações?',
+      message: 'Atualizar lançamentos mensais vinculados a este fixo?',
+      choices: [
+        { id: 'none', label: 'Não propagar' },
+        { id: 'from-month', label: `A partir de ${monthLabel}` },
+        { id: 'future-only', label: 'Só meses futuros' },
+      ],
+    });
+
+    if (!choice || choice === 'none') return;
+
+    const payload = {
+      fromYear: selectedYear,
+      fromMonth: selectedMonth,
+      scope: choice as 'from-month' | 'future-only',
+    };
+
+    const result =
+      type === 'income'
+        ? await api.fixedIncomes.propagate(id, payload)
+        : await api.fixedExpenses.propagate(id, payload);
+
+    toast.success(`${result.updated} lançamento(s) atualizado(s).`);
   }
 
   // Abrir modal para novo item
@@ -101,21 +135,30 @@ function Fixed() {
       if (modalType === 'income') {
         if (editingItem) {
           await api.fixedIncomes.update(editingItem.id, data);
+          setShowModal(false);
+          await loadFixedData();
+          await handlePropagateAfterEdit('income', editingItem.id);
         } else {
           await api.fixedIncomes.create(data);
+          setShowModal(false);
+          loadFixedData();
+          toast.success('Ganho fixo criado.');
         }
       } else {
         if (editingItem) {
           await api.fixedExpenses.update(editingItem.id, data);
+          setShowModal(false);
+          await loadFixedData();
+          await handlePropagateAfterEdit('expense', editingItem.id);
         } else {
           await api.fixedExpenses.create(data);
+          setShowModal(false);
+          loadFixedData();
+          toast.success('Gasto fixo criado.');
         }
       }
-
-      setShowModal(false);
-      loadFixedData();
     } catch (err: any) {
-      alert('Erro ao salvar: ' + err.message);
+      toast.error('Erro ao salvar: ' + err.message);
     }
   };
 
@@ -128,24 +171,31 @@ function Fixed() {
         await api.fixedExpenses.update(id, { active: !currentActive });
       }
       loadFixedData();
+      toast.success('Status atualizado.');
     } catch (err: any) {
-      alert('Erro ao atualizar: ' + err.message);
+      toast.error('Erro ao atualizar: ' + err.message);
     }
   };
 
-  // Excluir item
   const handleDelete = async (type: 'income' | 'expense', id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir este item fixo?')) {
-      try {
-        if (type === 'income') {
-          await api.fixedIncomes.delete(id);
-        } else {
-          await api.fixedExpenses.delete(id);
-        }
-        loadFixedData();
-      } catch (err: any) {
-        alert('Erro ao excluir: ' + err.message);
+    const ok = await confirm({
+      title: 'Excluir item fixo',
+      message: 'Tem certeza que deseja excluir este item fixo?',
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (!ok) return;
+
+    try {
+      if (type === 'income') {
+        await api.fixedIncomes.delete(id);
+      } else {
+        await api.fixedExpenses.delete(id);
       }
+      loadFixedData();
+      toast.success('Item fixo excluído.');
+    } catch (err: any) {
+      toast.error('Erro ao excluir: ' + err.message);
     }
   };
 
@@ -467,8 +517,8 @@ function Fixed() {
                   >
                     <option value="">Selecione</option>
                     {(modalType === 'income' ? incomeCategories : expenseCategories).map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name}
                       </option>
                     ))}
                   </select>

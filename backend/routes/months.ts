@@ -1,18 +1,24 @@
-// Rota de Lançamentos Mensais - Month Entries (TypeScript)
 import express, { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import {
+  syncFixedForMonth,
+  SyncMode,
+  recordFixedMonthSkip,
+} from '../services/syncFixed';
+import { getUserId, routeParamInt } from '../types/auth';
 
 const router = express.Router();
 
-// Buscar todos os lançamentos de um mês específico
 router.get('/:year/:month', async (req: Request, res: Response) => {
   try {
+    const userId = getUserId(req);
     const { year, month } = req.params;
 
     const entries = await prisma.monthEntry.findMany({
       where: {
-        year: parseInt(year),
-        month: parseInt(month),
+        userId,
+        year: routeParamInt(year),
+        month: routeParamInt(month),
       },
       orderBy: { date: 'asc' },
     });
@@ -23,98 +29,40 @@ router.get('/:year/:month', async (req: Request, res: Response) => {
   }
 });
 
-// Sincronizar lançamentos fixos no mês
 router.post('/:year/:month/sync-fixed', async (req: Request, res: Response) => {
   try {
+    const userId = getUserId(req);
     const { year, month } = req.params;
-    const yearInt = parseInt(year);
-    const monthInt = parseInt(month);
+    const mode = (req.body?.mode as SyncMode) ?? 'create-only';
 
-    const fixedIncomes = await prisma.fixedIncome.findMany({
-      where: { active: true },
-    });
-
-    const fixedExpenses = await prisma.fixedExpense.findMany({
-      where: { active: true },
-    });
-
-    let createdCount = 0;
-
-    for (const income of fixedIncomes) {
-      const existing = await prisma.monthEntry.findFirst({
-        where: {
-          year: yearInt,
-          month: monthInt,
-          type: 'income',
-          fixedRefId: income.id,
-        },
-      });
-
-      if (!existing) {
-        await prisma.monthEntry.create({
-          data: {
-            year: yearInt,
-            month: monthInt,
-            type: 'income',
-            description: income.name,
-            amount: income.amount,
-            date: `${year}-${String(month).padStart(2, '0')}-${String(income.dayOfMonth).padStart(2, '0')}`,
-            category: income.category,
-            isFixed: true,
-            fixedRefId: income.id,
-          },
-        });
-        createdCount++;
-      }
-    }
-
-    for (const expense of fixedExpenses) {
-      const existing = await prisma.monthEntry.findFirst({
-        where: {
-          year: yearInt,
-          month: monthInt,
-          type: 'expense',
-          fixedRefId: expense.id,
-        },
-      });
-
-      if (!existing) {
-        await prisma.monthEntry.create({
-          data: {
-            year: yearInt,
-            month: monthInt,
-            type: 'expense',
-            description: expense.name,
-            amount: expense.amount,
-            date: `${year}-${String(month).padStart(2, '0')}-${String(expense.dayOfMonth).padStart(2, '0')}`,
-            category: expense.category,
-            paymentMethod: expense.paymentMethod,
-            isFixed: true,
-            fixedRefId: expense.id,
-          },
-        });
-        createdCount++;
-      }
-    }
+    const { created, updated } = await syncFixedForMonth(
+      userId,
+      routeParamInt(year),
+      routeParamInt(month),
+      { mode }
+    );
 
     res.json({
-      message: `Sync concluído`,
-      created: createdCount,
+      message: 'Sync concluído',
+      created,
+      updated,
     });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao sincronizar lançamentos fixos' });
   }
 });
 
-// Criar lançamento avulso
 router.post('/entry', async (req: Request, res: Response) => {
   try {
-    const { year, month, type, description, amount, date, category, paymentMethod, note, isFixed } = req.body;
+    const userId = getUserId(req);
+    const { year, month, type, description, amount, date, category, paymentMethod, note, isFixed } =
+      req.body;
 
     const entry = await prisma.monthEntry.create({
       data: {
-        year: parseInt(year),
-        month: parseInt(month),
+        userId,
+        year: routeParamInt(year),
+        month: routeParamInt(month),
         type,
         description,
         amount: parseFloat(amount),
@@ -132,14 +80,21 @@ router.post('/entry', async (req: Request, res: Response) => {
   }
 });
 
-// Editar lançamento
 router.put('/entry/:id', async (req: Request, res: Response) => {
   try {
+    const userId = getUserId(req);
     const { id } = req.params;
     const data = req.body;
 
+    const existing = await prisma.monthEntry.findFirst({
+      where: { id: routeParamInt(id), userId },
+    });
+    if (!existing) {
+      return res.status(404).json({ error: 'Lançamento não encontrado' });
+    }
+
     const entry = await prisma.monthEntry.update({
-      where: { id: parseInt(id) },
+      where: { id: existing.id },
       data: {
         ...data,
         year: data.year ? parseInt(data.year) : undefined,
@@ -154,13 +109,29 @@ router.put('/entry/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Remover lançamento
 router.delete('/entry/:id', async (req: Request, res: Response) => {
   try {
+    const userId = getUserId(req);
     const { id } = req.params;
-    await prisma.monthEntry.delete({
-      where: { id: parseInt(id) },
+
+    const entry = await prisma.monthEntry.findFirst({
+      where: { id: routeParamInt(id), userId },
     });
+    if (!entry) {
+      return res.status(404).json({ error: 'Lançamento não encontrado' });
+    }
+
+    if (entry.isFixed && entry.fixedRefId != null) {
+      await recordFixedMonthSkip(
+        userId,
+        entry.year,
+        entry.month,
+        entry.type,
+        entry.fixedRefId
+      );
+    }
+
+    await prisma.monthEntry.delete({ where: { id: entry.id } });
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: 'Erro ao remover lançamento' });

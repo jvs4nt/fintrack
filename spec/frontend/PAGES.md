@@ -15,22 +15,24 @@
 ## Dashboard
 
 - Props: `selectedYear`, `selectedMonth` (do App — **não** tem seletor próprio de mês)
-- Exibe: saldo (`summary.balance`), cards ganhos/gastos/saldo, alerta `nextDueCard`, gráfico barras CSS (`sixMonthsData`), últimos 5 `lastEntries`
-- Pode usar `as any` no destructuring — tipar ao refatorar
+- Card destaque: `summary.netBalance` (ganhos − gastos − parcelas)
+- Tabela **Parcelas do mês** (`monthInstallments`)
+- Cards ganhos/gastos/saldo, `nextDueCard`, gráfico 6 meses, últimos 5 `lastEntries`
 
 ## Months
 
 - Seletor de mês (tabs Jan–Dez) e ano (`years`: atual ±5)
-- Ao mudar mês: `getEntries` + `syncFixed` (ou equivalente no load) + `installments.getByMonth`
-- Seções: Ganhos | Gastos | Parcelas | Resumo
-- Modal CRUD avulso: `months.createEntry` / `updateEntry` / `deleteEntry`
-- Entradas fixas: `isFixed` — cuidado ao editar (não altera template fixo)
+- Ao mudar mês: `syncFixed` + `getEntries` + … (sync respeita `FixedMonthSkip`)
+- **Excluir lançamento (Fixo):** some e não volta após reload — backend grava skip no DELETE
+- Botão **Sincronizar fixos** → `syncFixed(..., 'upsert')`
+- Seções: Ganhos | Gastos | Parcelas | **Metas do mês** | Resumo
+- Categorias via API (`categories.getAll`)
+- Metas: limites por categoria de despesa, barras 80%/100%
 
 ## Fixed
 
-- Duas colunas/listas: ganhos e gastos fixos
-- Toggle `active` via update
-- Aviso UX: alterar fixo não retroage em `MonthEntry` já criados no sync
+- Props: `selectedYear`, `selectedMonth` (mês de planejamento para propagate)
+- Categorias via API; após editar fixo, diálogo `choose()` para propagar lançamentos
 
 ## Cards
 
@@ -57,6 +59,12 @@
 ## Settings (App.tsx)
 
 - Input número 1–31 para `payday`
+- Seção **Conta** com e-mail logado e botão **Sair**
+
+## Login
+
+- Tela full-page antes do app (`Login.tsx`)
+- Modos: entrar, criar conta, link mágico por e-mail
 - Salvar recalcula `selectedYear/Month` e `alert` de sucesso
 
 ## Classes CSS frequentes

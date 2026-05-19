@@ -7,14 +7,12 @@ interface DashboardProps {
   selectedMonth: number;
 }
 
-// Página Dashboard - Visão geral do mês atual
 function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
   const api = useApi();
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Carregar dados do dashboard
   useEffect(() => {
     loadDashboard();
   }, [selectedYear, selectedMonth]);
@@ -25,14 +23,14 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
     try {
       const result = await api.dashboard.getSummary(selectedYear, selectedMonth);
       setData(result);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(message);
     } finally {
       setLoading(false);
     }
   }
 
-  // Formatador de moeda
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -66,7 +64,7 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
 
   if (!data) return null;
 
-  const { summary, nextDueCard, lastEntries, sixMonthsData } = data as any;
+  const { summary, nextDueCard, lastEntries, sixMonthsData, monthInstallments } = data;
 
   return (
     <div>
@@ -80,11 +78,14 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
         </p>
       </header>
 
-      {/* Card de Saldo em Destaque */}
-      <div className="card card-bordered-left" style={{
-        borderLeftColor: summary.netBalance >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)',
-        marginBottom: 'var(--spacing-xl)',
-      } as React.CSSProperties}>
+      <div
+        className="card card-bordered-left"
+        style={{
+          borderLeftColor:
+            summary.netBalance >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)',
+          marginBottom: 'var(--spacing-xl)',
+        }}
+      >
         <div className="stat-label">Saldo Líquido do Mês (c/ Parcelas)</div>
         <div
           className="stat-value"
@@ -96,15 +97,18 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
           {formatCurrency(summary.netBalance)}
         </div>
         <div className="stat-subvalue">
-          Ganhos: {formatCurrency(summary.totalIncome)} | Gastos: {formatCurrency(summary.totalExpense)} | Parcelas: {formatCurrency(summary.totalInstallments)}
+          Ganhos: {formatCurrency(summary.totalIncome)} | Gastos:{' '}
+          {formatCurrency(summary.totalExpense)} | Parcelas:{' '}
+          {formatCurrency(summary.totalInstallments)}
         </div>
       </div>
 
-      {/* Cards de Resumo */}
       <div className="dashboard-grid">
         <div className="stat-card">
           <div className="stat-label">💰 Total Ganhos</div>
-          <div className="stat-value positive">{formatCurrency(summary.totalIncome)}</div>
+          <div className="stat-value positive">
+            {formatCurrency(summary.totalIncome)}
+          </div>
         </div>
 
         <div className="stat-card">
@@ -142,7 +146,41 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
         </div>
       </div>
 
-      {/* Gráfico de Barras - Últimos 6 meses */}
+      {monthInstallments.length > 0 && (
+        <div className="table-container installments-summary-table">
+          <h3
+            className="chart-title"
+            style={{ padding: 'var(--spacing-md) var(--spacing-lg)' }}
+          >
+            💳 Parcelas do mês
+          </h3>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th>Cartão</th>
+                <th>Parcela</th>
+                <th className="text-right">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthInstallments.map((inst) => (
+                <tr key={inst.id}>
+                  <td>{inst.description}</td>
+                  <td>{inst.card?.name ?? '—'}</td>
+                  <td>
+                    {inst.currentMonthInstallment} / {inst.totalInstallments}
+                  </td>
+                  <td className="text-right" style={{ color: 'var(--accent-warning)' }}>
+                    {formatCurrency(inst.installmentAmount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <div className="chart-container">
         <h3 className="chart-title">📈 Ganhos vs Gastos (Últimos 6 meses)</h3>
         <div className="bar-chart">
@@ -175,7 +213,6 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
         </div>
       </div>
 
-      {/* Últimos Lançamentos */}
       <div className="table-container">
         <h3 className="chart-title" style={{ padding: 'var(--spacing-md) var(--spacing-lg)' }}>
           📋 Últimos Lançamentos
@@ -190,17 +227,19 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
             </tr>
           </thead>
           <tbody>
-            {lastEntries && lastEntries.length > 0 ? (
+            {lastEntries.length > 0 ? (
               lastEntries.map((entry) => (
                 <tr key={entry.id}>
                   <td>
                     {entry.description}
                     {entry.isFixed && (
-                      <span style={{
-                        marginLeft: 'var(--spacing-sm)',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                      }}>
+                      <span
+                        style={{
+                          marginLeft: 'var(--spacing-sm)',
+                          fontSize: '0.75rem',
+                          color: 'var(--text-secondary)',
+                        }}
+                      >
                         (Fixo)
                       </span>
                     )}
@@ -210,7 +249,10 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
                   <td
                     className="text-right"
                     style={{
-                      color: entry.type === 'income' ? 'var(--accent-primary)' : 'var(--accent-danger)',
+                      color:
+                        entry.type === 'income'
+                          ? 'var(--accent-primary)'
+                          : 'var(--accent-danger)',
                       fontFamily: 'var(--font-display)',
                       fontWeight: 600,
                     }}

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { useApi } from './hooks/useApi';
+import { useToast } from './components/ToastProvider';
+import { useAuth } from './context/AuthContext';
 
 // Importar páginas
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Months from './pages/Months';
 import Fixed from './pages/Fixed';
@@ -22,6 +25,8 @@ const navigation = [
 
 function App() {
   const api = useApi();
+  const toast = useToast();
+  const { session, loading: authLoading, signOut } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -43,9 +48,14 @@ function App() {
     }, 220);
   };
 
-  // Buscar configurações ao carregar
   useEffect(() => {
+    if (!session) {
+      setIsInitializing(false);
+      return;
+    }
+
     async function init() {
+      setIsInitializing(true);
       try {
         const settings = await api.settings.get();
         setPayday(settings.payday);
@@ -77,7 +87,7 @@ function App() {
       }
     }
     init();
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     if (!isAgentModalOpen) return;
@@ -114,9 +124,9 @@ function App() {
       setSelectedYear(planningDate.getFullYear());
       setSelectedMonth(planningDate.getMonth() + 1);
       
-      alert("Dia do recebimento atualizado! O mês de planejamento foi ajustado.");
+      toast.success('Dia do recebimento atualizado! O mês de planejamento foi ajustado.');
     } catch (err) {
-      alert("Erro ao atualizar payday");
+      toast.error('Erro ao atualizar payday');
     }
   };
 
@@ -135,7 +145,7 @@ function App() {
       case 'months':
         return <Months {...pageProps} />;
       case 'fixed':
-        return <Fixed />;
+        return <Fixed selectedYear={selectedYear} selectedMonth={selectedMonth} />;
       case 'cards':
         return <Cards />;
       case 'savings':
@@ -168,6 +178,22 @@ function App() {
                 </div>
               </div>
             </div>
+            <div className="card" style={{ maxWidth: '400px', marginTop: 'var(--spacing-lg)' }}>
+              <h2 style={{ fontSize: '1rem', marginBottom: 'var(--spacing-md)' }}>Conta</h2>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>
+                {session?.user.email}
+              </p>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={async () => {
+                  await signOut();
+                  toast.success('Você saiu da conta.');
+                }}
+              >
+                Sair
+              </button>
+            </div>
           </div>
         );
       default:
@@ -175,6 +201,8 @@ function App() {
     }
   };
 
+  if (authLoading) return <div className="loading">Carregando...</div>;
+  if (!session) return <Login />;
   if (isInitializing) return <div className="loading">Iniciando FinTrack...</div>;
 
   return (

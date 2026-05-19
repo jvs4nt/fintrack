@@ -8,14 +8,14 @@ Organizador financeiro pessoal (pt-BR): ganhos/gastos fixos, lançamentos mensai
 
 | Camada | Tecnologias |
 |--------|-------------|
-| Backend | Node.js, Express 4, Prisma 6, SQLite, TypeScript, tsx |
+| Backend | Node.js, Express 4, Prisma 6, **PostgreSQL (Supabase)**, TypeScript, tsx |
 | Frontend | React 18, Vite 6, TypeScript, CSS puro (sem UI lib) |
-| Auth | Nenhuma (app local/single-user) |
+| Auth | **Supabase Auth** — JWT Bearer na API |
 
 ## Portas e env
 
-- API: `http://localhost:3333` — `PORT`, `CORS_ORIGIN`, `DATABASE_URL`, `NODE_ENV`
-- UI: `http://localhost:5173` — `VITE_API_BASE_URL` (default `http://localhost:3333/api`)
+- API: `http://localhost:3333` — `PORT`, `CORS_ORIGIN`, `DATABASE_URL`, `DIRECT_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
+- UI: `http://localhost:5173` — `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
 
 ## Módulos funcionais
 

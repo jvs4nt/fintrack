@@ -2,11 +2,27 @@
 
 Base: `{VITE_API_BASE_URL}` = `http://localhost:3333/api`
 
+## Autenticação
+
+Todas as rotas `/api/*` **exceto** `GET /health` exigem:
+
+```
+Authorization: Bearer <access_token>
+```
+
+Token: sessão Supabase (`session.access_token`) enviada pelo `useApi`.
+
+| Status | Significado |
+|--------|-------------|
+| 401 | Token ausente, inválido ou expirado |
+
+Dados filtrados por `userId` do JWT — cada usuário vê apenas seus registros.
+
 ## Health
 
-| Método | Rota | Resposta |
-|--------|------|----------|
-| GET | `/health` | `{ status, message }` |
+| Método | Rota | Auth | Resposta |
+|--------|------|------|----------|
+| GET | `/health` | Não | `{ status, message }` |
 
 ## Fixed Incomes `/fixed-incomes`
 
@@ -15,21 +31,38 @@ Base: `{VITE_API_BASE_URL}` = `http://localhost:3333/api`
 | GET | `/` | Lista ordenada por name |
 | POST | `/` | `{ name, amount, dayOfMonth, category, active? }` |
 | PUT | `/:id` | campos parciais |
+| POST | `/:id/propagate` | `{ fromYear, fromMonth, scope }` → `{ updated }` — `scope`: `from-month` \| `future-only` |
 | DELETE | `/:id` | 204 |
 
 ## Fixed Expenses `/fixed-expenses`
 
-Igual a incomes + **`paymentMethod`** obrigatório no POST.
+Igual a incomes + **`paymentMethod`** obrigatório no POST + `POST /:id/propagate`.
+
+## Categories `/categories`
+
+| Método | Rota | Body / Notas |
+|--------|------|----------------|
+| GET | `/?type=income\|expense` | Lista ordenada por name |
+| POST | `/` | `{ name, type }` |
+| PUT | `/:id` | `{ name }` — renomeia em `MonthEntry`, fixos e budgets |
+| DELETE | `/:id` | 204 ou 409 se em uso |
+
+## Budgets `/budgets`
+
+| Método | Rota | Body / Notas |
+|--------|------|----------------|
+| GET | `/:year/:month` | `{ budgets: [{ category, limit, spent, percent, status }], alerts }` — `status`: `ok` \| `warning` (≥80%) \| `exceeded` (≥100%) |
+| PUT | `/:year/:month` | `{ budgets: [{ category, limitAmount }] }` — upsert; `limitAmount <= 0` remove meta |
 
 ## Months `/months`
 
 | Método | Rota | Body / Notas |
 |--------|------|----------------|
 | GET | `/:year/:month` | `MonthEntry[]` ordenado por date |
-| POST | `/:year/:month/sync-fixed` | `{ message, created }` |
+| POST | `/:year/:month/sync-fixed` | `{ mode?: 'create-only' \| 'upsert' }` → `{ message, created, updated }` |
 | POST | `/entry` | `{ year, month, type, description, amount, date, category, paymentMethod?, note?, isFixed? }` |
 | PUT | `/entry/:id` | campos parciais; coerção year/month/amount |
-| DELETE | `/entry/:id` | 204 |
+| DELETE | `/entry/:id` | 204 — se `isFixed`, grava `FixedMonthSkip` para o sync não recriar |
 
 `type`: `"income"` | `"expense"`
 

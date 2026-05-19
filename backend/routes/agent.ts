@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { recordFixedMonthSkip } from '../services/syncFixed';
+import { getUserId, routeParamInt } from '../types/auth';
 
 const router = express.Router();
 
@@ -127,7 +129,11 @@ function parseCategory(message: string, type: EntryType): string {
   return 'Outros';
 }
 
-async function findCandidateEntries(message: string, expectedType: EntryType | null) {
+async function findCandidateEntries(
+  userId: string,
+  message: string,
+  expectedType: EntryType | null
+) {
   const normalized = normalizeText(message);
   const amount = parseAmount(message);
   const description = extractDescription(message);
@@ -137,6 +143,7 @@ async function findCandidateEntries(message: string, expectedType: EntryType | n
 
   const candidates = await prisma.monthEntry.findMany({
     where: {
+      userId,
       createdAt: {
         gte: from,
       },
@@ -174,8 +181,9 @@ function buildBaseResponse(partial: Partial<AgentResponse>): AgentResponse {
   };
 }
 
-router.post('/chat', async (req: Request<unknown, unknown, AgentRequestBody>, res: Response<AgentResponse>) => {
+router.post('/chat', async (req: Request, res: Response<AgentResponse>) => {
   try {
+    const userId = getUserId(req);
     const message = req.body.message?.trim() ?? '';
     const pendingAction = req.body.pendingAction ?? null;
     const normalized = normalizeText(message);
@@ -204,9 +212,32 @@ router.post('/chat', async (req: Request<unknown, unknown, AgentRequestBody>, re
         );
       }
 
-      await prisma.monthEntry.delete({
-        where: { id: pendingAction.entryId },
+      const entryToDelete = await prisma.monthEntry.findFirst({
+        where: { id: pendingAction.entryId, userId },
       });
+      if (!entryToDelete) {
+        return res.json(
+          buildBaseResponse({
+            intention: 'delete_entry',
+            message: 'Lançamento não encontrado ou já foi removido.',
+            action: 'remover lançamento',
+            result: 'não encontrado',
+            pendingAction: null,
+          }),
+        );
+      }
+
+      if (entryToDelete.isFixed && entryToDelete.fixedRefId != null) {
+        await recordFixedMonthSkip(
+          userId,
+          entryToDelete.year,
+          entryToDelete.month,
+          entryToDelete.type,
+          entryToDelete.fixedRefId
+        );
+      }
+
+      await prisma.monthEntry.delete({ where: { id: entryToDelete.id } });
 
       return res.json(
         buildBaseResponse({
@@ -230,7 +261,7 @@ router.post('/chat', async (req: Request<unknown, unknown, AgentRequestBody>, re
       const month = date.getMonth() + 1;
 
       const entries = await prisma.monthEntry.findMany({
-        where: { year, month },
+        where: { userId, year, month },
       });
 
       const totalIncome = entries.filter((entry) => entry.type === 'income').reduce((acc, cur) => acc + cur.amount, 0);
@@ -275,6 +306,7 @@ router.post('/chat', async (req: Request<unknown, unknown, AgentRequestBody>, re
 
       const entry = await prisma.monthEntry.create({
         data: {
+          userId,
           year: date.getFullYear(),
           month: date.getMonth() + 1,
           type: detectedType,
@@ -306,7 +338,7 @@ router.post('/chat', async (req: Request<unknown, unknown, AgentRequestBody>, re
     }
 
     if (intent === 'delete_entry') {
-      const matches = await findCandidateEntries(message, detectedType);
+      const matches = await findCandidateEntries(userId, message, detectedType);
       if (matches.length === 0) {
         return res.json(
           buildBaseResponse({
@@ -354,7 +386,7 @@ router.post('/chat', async (req: Request<unknown, unknown, AgentRequestBody>, re
     }
 
     if (intent === 'update_entry') {
-      const matches = await findCandidateEntries(message, detectedType);
+      const matches = await findCandidateEntries(userId, message, detectedType);
       if (matches.length === 0) {
         return res.json(
           buildBaseResponse({
@@ -384,6 +416,16 @@ router.post('/chat', async (req: Request<unknown, unknown, AgentRequestBody>, re
       }
 
       const target = matches[0];
+      if (target.userId !== userId) {
+        return res.json(
+          buildBaseResponse({
+            intention: 'update_entry',
+            message: 'Lançamento não encontrado.',
+            result: 'não encontrado',
+          }),
+        );
+      }
+
       const updated = await prisma.monthEntry.update({
         where: { id: target.id },
         data: { amount: newAmount },

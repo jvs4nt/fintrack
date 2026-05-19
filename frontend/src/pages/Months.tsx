@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
-import { MonthEntry, Installment } from '../types';
+import { useToast } from '../components/ToastProvider';
+import { useConfirm } from '../components/ConfirmDialog';
+import { BudgetItem, Category, InstallmentMonthView, MonthEntry } from '../types';
 
 // Meses do ano
 const months = [
@@ -31,9 +33,16 @@ interface MonthsProps {
 
 function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear }: MonthsProps) {
   const api = useApi();
+  const toast = useToast();
+  const { confirm } = useConfirm();
   const [loading, setLoading] = useState<boolean>(false);
   const [entries, setEntries] = useState<MonthEntry[]>([]);
-  const [installments, setInstallments] = useState<any[]>([]); // Parcelas do mês têm formato específico do backend
+  const [installments, setInstallments] = useState<InstallmentMonthView[]>([]);
+  const [incomeCategories, setIncomeCategories] = useState<Category[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<Category[]>([]);
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
+  const [budgetLimits, setBudgetLimits] = useState<Record<string, string>>({});
+  const [savingBudgets, setSavingBudgets] = useState(false);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editingEntry, setEditingEntry] = useState<MonthEntry | null>(null);
   const [formData, setFormData] = useState({
@@ -54,20 +63,65 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
   async function loadMonthData() {
     setLoading(true);
     try {
-      // Sincronizar fixos
       await api.months.syncFixed(selectedYear, selectedMonth);
 
-      // Carregar lançamentos
-      const entriesData = await api.months.getEntries(selectedYear, selectedMonth);
-      setEntries(entriesData || []);
+      const [entriesData, installmentsData, incomeCats, expenseCats, budgetData] =
+        await Promise.all([
+          api.months.getEntries(selectedYear, selectedMonth),
+          api.installments.getByMonth(selectedYear, selectedMonth),
+          api.categories.getAll('income'),
+          api.categories.getAll('expense'),
+          api.budgets.getByMonth(selectedYear, selectedMonth),
+        ]);
 
-      // Carregar parcelas do mês
-      const installmentsData = await api.installments.getByMonth(selectedYear, selectedMonth);
+      setEntries(entriesData || []);
       setInstallments(installmentsData || []);
+      setIncomeCategories(incomeCats || []);
+      setExpenseCategories(expenseCats || []);
+      setBudgetItems(budgetData.budgets || []);
+
+      const limits: Record<string, string> = {};
+      for (const b of budgetData.budgets || []) {
+        limits[b.category] = String(b.limit);
+      }
+      setBudgetLimits(limits);
     } catch (err) {
       console.error('Erro ao carregar mês:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSyncUpsert() {
+    try {
+      const result = await api.months.syncFixed(selectedYear, selectedMonth, 'upsert');
+      toast.success(
+        `Sync concluído: ${result.created} criado(s), ${result.updated} atualizado(s).`
+      );
+      loadMonthData();
+    } catch (err: any) {
+      toast.error('Erro ao sincronizar: ' + err.message);
+    }
+  }
+
+  async function handleSaveBudgets() {
+    setSavingBudgets(true);
+    try {
+      const budgets = expenseCategories
+        .map((cat) => ({
+          category: cat.name,
+          limitAmount: parseFloat(budgetLimits[cat.name] || '0'),
+        }))
+        .filter((b) => b.limitAmount > 0);
+
+      await api.budgets.save(selectedYear, selectedMonth, budgets);
+      toast.success('Metas do mês salvas.');
+      const budgetData = await api.budgets.getByMonth(selectedYear, selectedMonth);
+      setBudgetItems(budgetData.budgets || []);
+    } catch (err: any) {
+      toast.error('Erro ao salvar metas: ' + err.message);
+    } finally {
+      setSavingBudgets(false);
     }
   }
 
@@ -120,20 +174,27 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
       }
       setShowModal(false);
       loadMonthData();
+      toast.success(editingEntry ? 'Lançamento atualizado.' : 'Lançamento criado.');
     } catch (err: any) {
-      alert('Erro ao salvar: ' + err.message);
+      toast.error('Erro ao salvar: ' + err.message);
     }
   };
 
-  // Excluir lançamento
   const handleDelete = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir este lançamento?')) {
-      try {
-        await api.months.deleteEntry(id);
-        loadMonthData();
-      } catch (err: any) {
-        alert('Erro ao excluir: ' + err.message);
-      }
+    const ok = await confirm({
+      title: 'Excluir lançamento',
+      message: 'Tem certeza que deseja excluir este lançamento?',
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (!ok) return;
+
+    try {
+      await api.months.deleteEntry(id);
+      loadMonthData();
+      toast.success('Lançamento excluído.');
+    } catch (err: any) {
+      toast.error('Erro ao excluir: ' + err.message);
     }
   };
 
@@ -153,27 +214,26 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
   const balance = totalIncome - totalExpense;
   const totalInstallments = installments.reduce((sum, i) => sum + i.installmentAmount, 0);
 
-  // Categorias para seleção
-  const categories = [
-    'Trabalho',
-    'Extra',
-    'Moradia',
-    'Alimentação',
-    'Transporte',
-    'Saúde',
-    'Educação',
-    'Entretenimento',
-    'Vestuário',
-    'Serviços',
-    'Investimento',
-    'Outros',
-  ];
+  const formCategories =
+    formData.type === 'income' ? incomeCategories : expenseCategories;
+
+  const spentByCategory: Record<string, number> = {};
+  for (const e of expenses) {
+    spentByCategory[e.category] = (spentByCategory[e.category] ?? 0) + e.amount;
+  }
 
   return (
     <div>
       <header className="page-header">
-        <h1 className="page-title">Meses</h1>
-        <p className="page-subtitle">Gerencie seus lançamentos mensais</p>
+        <div className="flex-between">
+          <div>
+            <h1 className="page-title">Meses</h1>
+            <p className="page-subtitle">Gerencie seus lançamentos mensais</p>
+          </div>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={handleSyncUpsert}>
+            Sincronizar fixos
+          </button>
+        </div>
       </header>
 
       {/* Seletor de Ano e Mês */}
@@ -308,7 +368,7 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
                     <div className="entry-info">
                       <span className="entry-name">{inst.description}</span>
                       <span className="entry-meta">
-                        {inst.card.name} • Parcela {inst.currentMonthInstallment} de{' '}
+                        {inst.card?.name} • Parcela {inst.currentMonthInstallment} de{' '}
                         {inst.totalInstallments}
                       </span>
                     </div>
@@ -320,6 +380,64 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
               </div>
             </section>
           )}
+
+          {/* Metas do mês */}
+          <section className="budget-section card" style={{ padding: 'var(--spacing-lg)' }}>
+            <div className="flex-between" style={{ marginBottom: 'var(--spacing-md)' }}>
+              <h2 style={{ fontSize: '1.2rem' }}>🎯 Metas do mês</h2>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={handleSaveBudgets}
+                disabled={savingBudgets}
+              >
+                {savingBudgets ? 'Salvando...' : 'Salvar metas'}
+              </button>
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>
+              Defina limites por categoria de despesa. Alertas em 80% e 100%.
+            </p>
+            {expenseCategories.map((cat) => {
+              const spent = spentByCategory[cat.name] ?? 0;
+              const limit = parseFloat(budgetLimits[cat.name] || '0');
+              const percent = limit > 0 ? (spent / limit) * 100 : 0;
+              const status =
+                limit <= 0 ? 'ok' : percent >= 100 ? 'exceeded' : percent >= 80 ? 'warning' : 'ok';
+              const existing = budgetItems.find((b) => b.category === cat.name);
+
+              return (
+                <div key={cat.id} className="budget-item">
+                  <div className="budget-item-header">
+                    <span>{cat.name}</span>
+                    <span>
+                      {formatCurrency(spent)}
+                      {limit > 0 ? ` / ${formatCurrency(limit)} (${Math.round(percent)}%)` : ''}
+                    </span>
+                  </div>
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Limite (R$)"
+                    value={budgetLimits[cat.name] ?? ''}
+                    onChange={(e) =>
+                      setBudgetLimits({ ...budgetLimits, [cat.name]: e.target.value })
+                    }
+                    style={{ marginBottom: 'var(--spacing-xs)' }}
+                  />
+                  {limit > 0 && (
+                    <div className="budget-progress">
+                      <div
+                        className={`budget-progress-fill ${existing?.status ?? status}`}
+                        style={{ width: `${Math.min(percent, 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </section>
 
           {/* Resumo do Mês */}
           <section style={{ marginTop: 'var(--spacing-xl)' }}>
@@ -454,9 +572,9 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
                       required
                     >
                       <option value="">Selecione</option>
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
+                      {formCategories.map((cat) => (
+                        <option key={cat.id} value={cat.name}>
+                          {cat.name}
                         </option>
                       ))}
                     </select>
