@@ -9,11 +9,13 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CategoryPicker } from '@/components/CategoryPicker';
 import { SheetModal } from '@/components/SheetModal';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 import { api } from '@/src/lib/api';
+import { ensureCategoryExists } from '@/src/lib/ensureCategory';
 import { computePlanningMonth } from '@/src/hooks/usePlanningMonth';
 import { confirmDestructive, toastMessage } from '@/src/utils/alerts';
 import type { BudgetItem, Category, InstallmentMonthView, MonthEntry } from '@/src/types';
@@ -179,15 +181,28 @@ export default function MonthsScreen() {
         toastMessage('Valor inválido');
         return;
       }
+
+      const category = await ensureCategoryExists(
+        api,
+        form.category,
+        form.type,
+        formCategories
+      );
+
+      const payload = {
+        ...form,
+        category,
+        amount,
+        paymentMethod: form.type === 'expense' ? form.paymentMethod || 'PIX' : undefined,
+      };
+
       if (editingEntry) {
-        await api.months.updateEntry(editingEntry.id, { ...form, amount });
+        await api.months.updateEntry(editingEntry.id, payload);
       } else {
         await api.months.createEntry({
-          ...form,
-          amount,
+          ...payload,
           year: selectedYear,
           month: selectedMonth,
-          paymentMethod: form.type === 'expense' ? form.paymentMethod || 'PIX' : undefined,
         });
       }
       setShowEntryModal(false);
@@ -416,7 +431,7 @@ export default function MonthsScreen() {
           {(['income', 'expense'] as const).map((t) => (
             <Pressable
               key={t}
-              onPress={() => setForm({ ...form, type: t })}
+              onPress={() => setForm({ ...form, type: t, category: '' })}
               style={[styles.typeChip, form.type === t && styles.typeChipActive]}>
               <Text style={[styles.typeChipText, form.type === t && styles.typeChipTextActive]}>
                 {t === 'income' ? 'Ganho' : 'Gasto'}
@@ -448,16 +463,13 @@ export default function MonthsScreen() {
           placeholderTextColor={Theme.textMuted}
         />
         <Text style={styles.label}>Categoria</Text>
-        <View style={styles.catListBox}>
-          {formCategories.map((c) => (
-            <Pressable
-              key={c.id}
-              onPress={() => setForm({ ...form, category: c.name })}
-              style={[styles.catRow, form.category === c.name && styles.catRowActive]}>
-              <Text style={styles.catRowText}>{c.name}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <CategoryPicker
+          key={form.type}
+          type={form.type}
+          value={form.category}
+          onChange={(category) => setForm({ ...form, category })}
+          categories={formCategories}
+        />
         {form.type === 'expense' ? (
           <>
             <Text style={[styles.label, { marginTop: Theme.spacingMd }]}>Forma de pagamento</Text>

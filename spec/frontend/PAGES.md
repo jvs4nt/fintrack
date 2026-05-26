@@ -26,13 +26,13 @@
 - **Excluir lançamento (Fixo):** some e não volta após reload — backend grava skip no DELETE
 - Botão **Sincronizar fixos** → `syncFixed(..., 'upsert')`
 - Seções: Ganhos | Gastos | Parcelas | **Metas do mês** | Resumo
-- Categorias via API (`categories.getAll`)
+- Categorias: [`CategoryPicker.tsx`](../frontend/src/components/CategoryPicker.tsx) — combobox customizado (sem `<select>` nativo); **+** adiciona nome à lista local; `POST /categories` só no **Salvar** do lançamento (`ensureCategory`)
 - Metas: limites por categoria de despesa, barras 80%/100%
 
 ## Fixed
 
 - Props: `selectedYear`, `selectedMonth` (mês de planejamento para propagate)
-- Categorias via API; após editar fixo, diálogo `choose()` para propagar lançamentos
+- Categorias: combobox no modal; após editar fixo, diálogo `choose()` para propagar lançamentos
 
 ## Cards
 

@@ -10,12 +10,14 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CategoryPicker } from '@/components/CategoryPicker';
 import { ChoiceModal } from '@/components/ChoiceModal';
 import { SheetModal } from '@/components/SheetModal';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 import { api } from '@/src/lib/api';
+import { ensureCategoryExists } from '@/src/lib/ensureCategory';
 import { computePlanningMonth } from '@/src/hooks/usePlanningMonth';
 import { confirmDestructive, toastMessage } from '@/src/utils/alerts';
 import type { Category, FixedExpense, FixedIncome } from '@/src/types';
@@ -61,8 +63,6 @@ export default function FixedScreen() {
     active: true,
   });
   const [propagateCtx, setPropagateCtx] = useState<PropagateCtx>(null);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [creatingCategory, setCreatingCategory] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -128,16 +128,11 @@ export default function FixedScreen() {
   async function saveFixed() {
     try {
       const name = form.name.trim();
-      const category = form.category.trim();
       const amount = parsePtBrAmount(form.amount);
       const dayOfMonth = parseInt(form.dayOfMonth.trim(), 10);
 
       if (!name) {
         toastMessage('Informe o nome');
-        return;
-      }
-      if (!category) {
-        toastMessage('Selecione uma categoria');
         return;
       }
       if (Number.isNaN(amount) || amount <= 0) {
@@ -148,6 +143,9 @@ export default function FixedScreen() {
         toastMessage('Dia do mês deve ser entre 1 e 31');
         return;
       }
+
+      const categoryList = modalType === 'income' ? incomeCategories : expenseCategories;
+      const category = await ensureCategoryExists(api, form.category, modalType, categoryList);
 
       const data = {
         name,
@@ -213,7 +211,6 @@ export default function FixedScreen() {
   function openNew(type: 'income' | 'expense') {
     setModalType(type);
     setEditingItem(null);
-    setNewCategoryName('');
     setForm({
       name: '',
       amount: '',
@@ -228,7 +225,6 @@ export default function FixedScreen() {
   function openEdit(type: 'income' | 'expense', item: FixedIncome | FixedExpense) {
     setModalType(type);
     setEditingItem(item);
-    setNewCategoryName('');
     setForm({
       name: item.name,
       amount: item.amount.toString(),
@@ -240,29 +236,6 @@ export default function FixedScreen() {
     setShowModal(true);
   }
 
-  async function addQuickCategory() {
-    const name = newCategoryName.trim();
-    if (!name) {
-      toastMessage('Digite o nome da categoria');
-      return;
-    }
-    setCreatingCategory(true);
-    try {
-      await api.categories.create({ name, type: modalType });
-      setNewCategoryName('');
-      const fresh = await api.categories.getAll(modalType);
-      if (modalType === 'income') setIncomeCategories(fresh ?? []);
-      else setExpenseCategories(fresh ?? []);
-      setForm((f) => ({ ...f, category: name }));
-      toastMessage('Categoria criada');
-    } catch (e) {
-      toastMessage('Erro', e instanceof Error ? e.message : 'Não foi possível criar');
-    } finally {
-      setCreatingCategory(false);
-    }
-  }
-
-  const cats = modalType === 'income' ? incomeCategories : expenseCategories;
   const totalIn = fixedIncomes.reduce((s, i) => s + i.amount, 0);
   const totalEx = fixedExpenses.reduce((s, e) => s + e.amount, 0);
 
@@ -373,38 +346,13 @@ export default function FixedScreen() {
           onChangeText={(t) => setForm({ ...form, dayOfMonth: t })}
         />
         <Text style={styles.label}>Categoria</Text>
-        {cats.length === 0 ? (
-          <View style={styles.catEmptyBox}>
-            <Text style={styles.catEmptyText}>
-              Nenhuma categoria de {modalType === 'income' ? 'ganho' : 'gasto'} ainda. Crie uma abaixo.
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nome da nova categoria"
-              placeholderTextColor={Theme.textMuted}
-              value={newCategoryName}
-              onChangeText={setNewCategoryName}
-              editable={!creatingCategory}
-            />
-            <Pressable
-              style={[styles.btnAddCat, creatingCategory && { opacity: 0.6 }]}
-              onPress={addQuickCategory}
-              disabled={creatingCategory}>
-              <Text style={styles.btnAddCatText}>{creatingCategory ? 'Salvando…' : 'Adicionar categoria'}</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.catListBox}>
-            {cats.map((c) => (
-              <Pressable
-                key={c.id}
-                style={[styles.catRow, form.category === c.name && styles.catRowActive]}
-                onPress={() => setForm({ ...form, category: c.name })}>
-                <Text style={styles.catText}>{c.name}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
+        <CategoryPicker
+          key={modalType}
+          type={modalType}
+          value={form.category}
+          onChange={(category) => setForm({ ...form, category })}
+          categories={modalType === 'income' ? incomeCategories : expenseCategories}
+        />
         {modalType === 'expense' ? (
           <>
             <Text style={[styles.label, { marginTop: 8 }]}>Pagamento</Text>

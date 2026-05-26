@@ -24,7 +24,8 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    const { name, type } = req.body;
+    const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    const { type } = req.body;
 
     if (!name || !type) {
       return res.status(400).json({ error: 'Campos obrigatórios: name, type' });

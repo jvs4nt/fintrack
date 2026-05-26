@@ -4,6 +4,8 @@ import { useToast } from '../components/ToastProvider';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Category, FixedIncome, FixedExpense } from '../types';
 import LoadingLogo from '../components/LoadingLogo';
+import CategoryPicker from '../components/CategoryPicker';
+import { ensureCategoryExists } from '../lib/ensureCategory';
 
 interface FixedProps {
   selectedYear: number;
@@ -127,8 +129,17 @@ function Fixed({ selectedYear, selectedMonth }: FixedProps) {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const categoryList = modalType === 'income' ? incomeCategories : expenseCategories;
+      const category = await ensureCategoryExists(
+        api,
+        formData.category,
+        modalType,
+        categoryList
+      );
+
       const data = {
         ...formData,
+        category,
         amount: parseFloat(formData.amount),
         dayOfMonth: parseInt(formData.dayOfMonth),
       };
@@ -510,19 +521,13 @@ function Fixed({ selectedYear, selectedMonth }: FixedProps) {
 
                 <div className="form-group">
                   <label className="form-label">Categoria</label>
-                  <select
-                    className="form-select"
+                  <CategoryPicker
+                    key={modalType}
+                    type={modalType}
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    required
-                  >
-                    <option value="">Selecione</option>
-                    {(modalType === 'income' ? incomeCategories : expenseCategories).map((cat) => (
-                      <option key={cat.id} value={cat.name}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(category) => setFormData({ ...formData, category })}
+                    categories={modalType === 'income' ? incomeCategories : expenseCategories}
+                  />
                 </div>
 
                 {modalType === 'expense' && (

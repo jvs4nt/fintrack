@@ -62,6 +62,8 @@ Props repassadas às páginas com mês:
 
 **Performance:** Meses chama só `getEntries` no load (sem `POST sync-fixed` antes); botão “Sincronizar fixos” usa `syncFixed(..., 'upsert')`. Após login, `App.tsx` não bloqueia o shell em `settings.get()` (payday/mês ajustam quando a resposta chega).
 
+**Categorias:** [`components/CategoryPicker.tsx`](../frontend/src/components/CategoryPicker.tsx) + [`lib/ensureCategory.ts`](../frontend/src/lib/ensureCategory.ts) — combobox (input + dropdown + botão `+`); persistência no banco ao salvar fixo/lançamento.
+
 **Regra:** novos endpoints → adicionar método aqui + tipo em `types.ts`.
 
 ## Tipos (`types.ts`)

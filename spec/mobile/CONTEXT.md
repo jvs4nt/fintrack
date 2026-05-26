@@ -41,7 +41,7 @@ Tokens em [`mobile/constants/Colors.ts`](../mobile/constants/Colors.ts) — pari
 - **Navegação e transições:** o Stack raiz em [`app/_layout.tsx`](../mobile/app/_layout.tsx) define animações por grupo (`index`, `(auth)`, `(app)`). Entre abas, **não** usar `screenOptions.animation` em `Tabs` (Expo SDK 54 / React Navigation 7 tem bugs com `shift`/`fade` nas tabs). A sensação de troca de tela nas abas vem do [`TabScreenTransition`](../mobile/components/TabScreenTransition.tsx) (Reanimated + `useFocusEffect`): fade leve + deslocamento ao focar; respeita “Reduzir movimento” do sistema. Integrado em [`PageShell`](../mobile/components/PageShell.tsx) e na raiz das telas em `(app)/`.
 - **Tab bar:** ícones Ionicons, rótulos com Sora, `expo-haptics` no toque; no **iOS**, fundo com `expo-blur` + translucidez em [`app/(app)/_layout.tsx`](../mobile/app/(app)/_layout.tsx); Android mantém barra sólida.
 - Confirmações destrutivas (excluir fixo, lançamento, cartão, reserva): modal temático via [`ConfirmProvider`](../mobile/src/context/ConfirmContext.tsx) em [`app/_layout.tsx`](../mobile/app/_layout.tsx); [`confirmDestructive`](../mobile/src/utils/alerts.ts) usa esse fluxo (fallback `Alert` se o provider não estiver montado).
-- Tela **Fixos**: o [`SheetModal`](../mobile/components/SheetModal.tsx) limita a altura do corpo com rolagem única; categorias são lista simples (sem `ScrollView` vertical aninhado); se não houver categorias de ganho/gasto, dá para criar uma inline (`POST /categories`).
+- Categorias em **Fixos** e **Meses**: combobox [`CategoryPicker`](../mobile/components/CategoryPicker.tsx) (sem picker nativo); **+** só atualiza lista local; [`ensureCategory.ts`](../mobile/src/lib/ensureCategory.ts) no Salvar.
 
 ## Comandos
 

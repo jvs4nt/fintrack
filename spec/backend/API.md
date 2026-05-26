@@ -43,7 +43,7 @@ Igual a incomes + **`paymentMethod`** obrigatório no POST + `POST /:id/propagat
 | Método | Rota | Body / Notas |
 |--------|------|----------------|
 | GET | `/?type=income\|expense` | Lista ordenada por name |
-| POST | `/` | `{ name, type }` |
+| POST | `/` | `{ name, type }` — `name` trimado no servidor; 400 se vazio; 409 se duplicata (`userId`+`name`+`type`) |
 | PUT | `/:id` | `{ name }` — renomeia em `MonthEntry`, fixos e budgets |
 | DELETE | `/:id` | 204 ou 409 se em uso |
 

@@ -4,6 +4,8 @@ import { useToast } from '../components/ToastProvider';
 import { useConfirm } from '../components/ConfirmDialog';
 import { BudgetItem, Category, InstallmentMonthView, MonthEntry } from '../types';
 import LoadingLogo from '../components/LoadingLogo';
+import CategoryPicker from '../components/CategoryPicker';
+import { ensureCategoryExists } from '../lib/ensureCategory';
 
 // Meses do ano
 const months = [
@@ -158,15 +160,24 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const category = await ensureCategoryExists(
+        api,
+        formData.category,
+        formData.type,
+        formCategories
+      );
+
+      const payload = {
+        ...formData,
+        category,
+        amount: parseFloat(formData.amount),
+      };
+
       if (editingEntry) {
-        await api.months.updateEntry(editingEntry.id, {
-          ...formData,
-          amount: parseFloat(formData.amount),
-        });
+        await api.months.updateEntry(editingEntry.id, payload);
       } else {
         await api.months.createEntry({
-          ...formData,
-          amount: parseFloat(formData.amount),
+          ...payload,
           year: selectedYear,
           month: selectedMonth,
         });
@@ -530,7 +541,13 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
                   <select
                     className="form-select"
                     value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'income' | 'expense' })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        type: e.target.value as 'income' | 'expense',
+                        category: '',
+                      })
+                    }
                   >
                     <option value="income">Ganho</option>
                     <option value="expense">Gasto</option>
@@ -577,45 +594,37 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
                   </div>
                 </div>
 
-                <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Categoria</label>
+                  <CategoryPicker
+                    key={formData.type}
+                    type={formData.type}
+                    value={formData.category}
+                    onChange={(category) => setFormData({ ...formData, category })}
+                    categories={formCategories}
+                  />
+                </div>
+
+                {formData.type === 'expense' && (
                   <div className="form-group">
-                    <label className="form-label">Categoria</label>
+                    <label className="form-label">Forma de Pagamento</label>
                     <select
                       className="form-select"
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      required
+                      value={formData.paymentMethod}
+                      onChange={(e) =>
+                        setFormData({ ...formData, paymentMethod: e.target.value })
+                      }
                     >
                       <option value="">Selecione</option>
-                      {formCategories.map((cat) => (
-                        <option key={cat.id} value={cat.name}>
-                          {cat.name}
-                        </option>
-                      ))}
+                      <option value="PIX">PIX</option>
+                      <option value="Débito">Débito</option>
+                      <option value="Crédito">Crédito</option>
+                      <option value="Dinheiro">Dinheiro</option>
+                      <option value="Boleto">Boleto</option>
+                      <option value="Transferência">Transferência</option>
                     </select>
                   </div>
-
-                  {formData.type === 'expense' && (
-                    <div className="form-group">
-                      <label className="form-label">Forma de Pagamento</label>
-                      <select
-                        className="form-select"
-                        value={formData.paymentMethod}
-                        onChange={(e) =>
-                          setFormData({ ...formData, paymentMethod: e.target.value })
-                        }
-                      >
-                        <option value="">Selecione</option>
-                        <option value="PIX">PIX</option>
-                        <option value="Débito">Débito</option>
-                        <option value="Crédito">Crédito</option>
-                        <option value="Dinheiro">Dinheiro</option>
-                        <option value="Boleto">Boleto</option>
-                        <option value="Transferência">Transferência</option>
-                      </select>
-                    </div>
-                  )}
-                </div>
+                )}
 
                 <div className="form-group">
                   <label className="form-label">Observações</label>
