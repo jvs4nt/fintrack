@@ -5,6 +5,7 @@ import {
   PropagateScope,
   clearFixedMonthSkips,
 } from '../services/syncFixed';
+import { validateFixedCreateBase } from '../lib/parseFixedCreate';
 import { getUserId, routeParamInt } from '../types/auth';
 
 const router = express.Router();
@@ -25,21 +26,26 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    const { name, amount, dayOfMonth, category, paymentMethod, active } = req.body;
-
-    if (!name || !amount || !dayOfMonth || !category) {
-      return res.status(400).json({ error: 'Campos obrigatórios: name, amount, dayOfMonth, category' });
+    const parsed = validateFixedCreateBase((req.body ?? {}) as Record<string, unknown>);
+    if (!parsed.ok) {
+      return res.status(400).json({ error: parsed.error });
     }
+    const { name, category, amount, dayOfMonth, active } = parsed.data;
+    const raw = (req.body ?? {}) as Record<string, unknown>;
+    const paymentMethod =
+      typeof raw.paymentMethod === 'string' && raw.paymentMethod.trim()
+        ? raw.paymentMethod.trim()
+        : 'Não especificado';
 
     const fixedExpense = await prisma.fixedExpense.create({
       data: {
         userId,
         name,
-        amount: parseFloat(amount),
-        dayOfMonth: parseInt(dayOfMonth),
+        amount,
+        dayOfMonth,
         category,
-        paymentMethod: paymentMethod || 'Não especificado',
-        active: active !== undefined ? active : true,
+        paymentMethod,
+        active,
       },
     });
 

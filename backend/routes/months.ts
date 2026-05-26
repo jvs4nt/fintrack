@@ -35,12 +35,13 @@ router.post('/:year/:month/sync-fixed', async (req: Request, res: Response) => {
     const { year, month } = req.params;
     const mode = (req.body?.mode as SyncMode) ?? 'create-only';
 
-    const { created, updated } = await syncFixedForMonth(
-      userId,
-      routeParamInt(year),
-      routeParamInt(month),
-      { mode }
-    );
+    const yearInt = routeParamInt(year);
+    const monthInt = routeParamInt(month);
+    if (!Number.isFinite(yearInt) || !Number.isFinite(monthInt) || monthInt < 1 || monthInt > 12) {
+      return res.status(400).json({ error: 'Ano ou mês inválido' });
+    }
+
+    const { created, updated } = await syncFixedForMonth(userId, yearInt, monthInt, { mode });
 
     res.json({
       message: 'Sync concluído',
@@ -48,7 +49,12 @@ router.post('/:year/:month/sync-fixed', async (req: Request, res: Response) => {
       updated,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao sincronizar lançamentos fixos' });
+    console.error('sync-fixed:', error);
+    const details = error instanceof Error ? error.message : String(error);
+    res.status(500).json({
+      error: 'Erro ao sincronizar lançamentos fixos',
+      ...(process.env.NODE_ENV !== 'production' ? { details } : {}),
+    });
   }
 });
 

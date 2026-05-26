@@ -29,7 +29,7 @@ Dados filtrados por `userId` do JWT — cada usuário vê apenas seus registros.
 | Método | Rota | Body / Notas |
 |--------|------|----------------|
 | GET | `/` | Lista ordenada por name |
-| POST | `/` | `{ name, amount, dayOfMonth, category, active? }` |
+| POST | `/` | `{ name, amount, dayOfMonth, category, active? }` — `amount` pode ser número ou string pt-BR (ex. `"1.234,56"`); 400 com mensagem específica se nome/categoria vazios, valor ≤ 0 ou dia fora de 1–31 |
 | PUT | `/:id` | campos parciais |
 | POST | `/:id/propagate` | `{ fromYear, fromMonth, scope }` → `{ updated }` — `scope`: `from-month` \| `future-only` |
 | DELETE | `/:id` | 204 |
@@ -59,7 +59,7 @@ Igual a incomes + **`paymentMethod`** obrigatório no POST + `POST /:id/propagat
 | Método | Rota | Body / Notas |
 |--------|------|----------------|
 | GET | `/:year/:month` | `MonthEntry[]` ordenado por date |
-| POST | `/:year/:month/sync-fixed` | `{ mode?: 'create-only' \| 'upsert' }` → `{ message, created, updated }` |
+| POST | `/:year/:month/sync-fixed` | `{ mode?: 'create-only' \| 'upsert' }` → `{ message, created, updated }` — 400 se ano/mês inválidos; 500 `{ error }` e, fora de `production`, `{ details }` (mensagem interna para depuração) |
 | POST | `/entry` | `{ year, month, type, description, amount, date, category, paymentMethod?, note?, isFixed? }` |
 | PUT | `/entry/:id` | campos parciais; coerção year/month/amount |
 | DELETE | `/entry/:id` | 204 — se `isFixed`, grava `FixedMonthSkip` para o sync não recriar |

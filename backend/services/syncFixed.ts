@@ -7,9 +7,16 @@ function monthIndex(year: number, month: number): number {
   return year * 12 + month;
 }
 
+function clampDayOfMonth(dayOfMonth: number): number {
+  const d = Number(dayOfMonth);
+  if (!Number.isFinite(d)) return 1;
+  return Math.min(Math.max(Math.floor(d), 1), 31);
+}
+
 function buildFixedDate(year: number, month: number, dayOfMonth: number): string {
+  const safeDay = clampDayOfMonth(dayOfMonth);
   const lastDay = new Date(year, month, 0).getDate();
-  const day = Math.min(dayOfMonth, lastDay);
+  const day = Math.min(safeDay, lastDay);
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
@@ -102,6 +109,12 @@ async function upsertFixedEntry(params: {
   paymentMethod?: string;
   mode: SyncMode;
 }): Promise<{ created: number; updated: number }> {
+  if (!Number.isFinite(params.amount)) {
+    throw new Error(
+      `Valor (amount) inválido no fixo ${params.type} id=${params.fixedRefId}. Edite o cadastro do fixo.`
+    );
+  }
+
   const skipped = await isFixedSkipped(
     params.userId,
     params.year,

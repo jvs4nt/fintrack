@@ -96,7 +96,9 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error((errorData as { error?: string }).error || `Erro ${response.status}`);
+    const err = (errorData as { error?: string }).error || `Erro ${response.status}`;
+    const details = (errorData as { details?: string }).details;
+    throw new Error(details ? `${err} — ${details}` : err);
   }
 
   if (response.status === 204) {

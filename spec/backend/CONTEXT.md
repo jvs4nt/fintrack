@@ -29,9 +29,20 @@ backend/
 - Provider: **postgresql** (`DATABASE_URL` + `DIRECT_URL`)
 - Multi-tenant por `userId` em todas as queries de negócio
 
+### Conexão Supabase (erro “Can’t reach database server at `db.*.supabase.co:5432`”)
+
+O cliente Prisma usa **somente** `DATABASE_URL` em runtime. Se essa variável apontar para o host **direto** (`db.<ref>.supabase.co`, porta 5432), muitas redes não alcançam o servidor e qualquer rota que use o banco falha.
+
+- **`DATABASE_URL`**: copie do Dashboard Supabase → **Connect** → **Transaction pooler** (host `*.pooler.supabase.com`, porta **6543**, query `?pgbouncer=true` conforme documentação Prisma + Supabase).
+- **`DIRECT_URL`**: conexão direta `db.<ref>.supabase.co:5432` — use só para `prisma migrate` / `db push`.
+
+Em desenvolvimento, se `DATABASE_URL` estiver no host direto, o `prisma/client.ts` emite um aviso no console do backend. Ver também `backend/.env.example`.
+
 ## Auth
 
-- `middleware/auth.ts` — `Authorization: Bearer <token>`, valida com `supabase.auth.getUser`
+- `middleware/auth.ts` — `Authorization: Bearer <token>`
+- Com **`SUPABASE_JWT_SECRET`** (JWT Secret do projeto no Dashboard Supabase): validação **local** do JWT (HS256, `sub` = `userId`) — evita uma chamada HTTP à Auth do Supabase **por request** (importante quando o cliente faz várias chamadas em paralelo, ex. tela Meses).
+- Sem esse env: fallback `supabase.auth.getUser(token)` (mais lento sob carga paralela).
 - Rotas usam `getUserId(req)` de `types/auth.ts`
 
 ## Padrão de rota
