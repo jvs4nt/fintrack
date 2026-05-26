@@ -69,7 +69,7 @@ Centralizado em `services/syncFixed.ts`:
 - `clearFixedMonthSkips` — ao excluir fixo pai
 - `propagateFixedToEntries({ userId, fixedType, fixedId, ... })`
 
-Usado por sync em Meses, dashboard e propagate.
+Usado por `GET /months/:y/:m` (sync embutido, `?sync=0` para pular), `POST .../sync-fixed`, dashboard summary e propagate.
 
 ### Settings
 

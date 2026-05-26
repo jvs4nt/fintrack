@@ -20,6 +20,11 @@ import { supabase } from '../lib/supabase';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333/api';
 
+function syncQuery(sync?: boolean): string {
+  if (sync === false) return '?sync=0';
+  return '';
+}
+
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
 
@@ -99,8 +104,8 @@ export function useApi() {
   };
 
   const months = {
-    getEntries: (year: number, month: number) =>
-      fetchApi<MonthEntry[]>(`/months/${year}/${month}`),
+    getEntries: (year: number, month: number, options?: { sync?: boolean }) =>
+      fetchApi<MonthEntry[]>(`/months/${year}/${month}${syncQuery(options?.sync)}`),
     syncFixed: (year: number, month: number, mode: 'create-only' | 'upsert' = 'create-only') =>
       fetchApi<SyncFixedResponse>(`/months/${year}/${month}/sync-fixed`, {
         method: 'POST',
@@ -149,8 +154,10 @@ export function useApi() {
   };
 
   const dashboard = {
-    getSummary: (year: number, month: number) =>
-      fetchApi<DashboardSummary>(`/dashboard/summary/${year}/${month}`),
+    getSummary: (year: number, month: number, options?: { sync?: boolean }) =>
+      fetchApi<DashboardSummary>(
+        `/dashboard/summary/${year}/${month}${syncQuery(options?.sync)}`
+      ),
   };
 
   const settings = {

@@ -64,8 +64,6 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
   async function loadMonthData() {
     setLoading(true);
     try {
-      await api.months.syncFixed(selectedYear, selectedMonth);
-
       const [entriesData, installmentsData, incomeCats, expenseCats, budgetData] =
         await Promise.all([
           api.months.getEntries(selectedYear, selectedMonth),

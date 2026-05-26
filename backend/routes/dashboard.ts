@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { shouldSyncFixed } from '../lib/monthRouteQuery';
 import { syncFixedForMonth } from '../services/syncFixed';
 import { getUserId, routeParamInt } from '../types/auth';
 
@@ -12,7 +13,9 @@ router.get('/summary/:year/:month', async (req: Request, res: Response) => {
     const yearInt = routeParamInt(year);
     const monthInt = routeParamInt(month);
 
-    await syncFixedForMonth(userId, yearInt, monthInt, { mode: 'create-only' });
+    if (shouldSyncFixed(req)) {
+      await syncFixedForMonth(userId, yearInt, monthInt, { mode: 'create-only' });
+    }
 
     const entries = await prisma.monthEntry.findMany({
       where: { userId, year: yearInt, month: monthInt },
@@ -28,10 +31,32 @@ router.get('/summary/:year/:month', async (req: Request, res: Response) => {
 
     const balance = totalIncome - totalExpense;
 
-    const allInstallments = await prisma.installment.findMany({
-      include: { card: true },
-      where: { status: 'active', card: { userId } },
-    });
+    const monthTargets: Array<{
+      targetYear: number;
+      targetMonthNum: number;
+      labelDate: Date;
+    }> = [];
+    for (let i = 5; i >= 0; i--) {
+      const labelDate = new Date(yearInt, monthInt - 1 - i);
+      monthTargets.push({
+        targetYear: labelDate.getFullYear(),
+        targetMonthNum: labelDate.getMonth() + 1,
+        labelDate,
+      });
+    }
+
+    const [allInstallments, cards, ...sixMonthEntries] = await Promise.all([
+      prisma.installment.findMany({
+        include: { card: true },
+        where: { status: 'active', card: { userId } },
+      }),
+      prisma.card.findMany({ where: { userId } }),
+      ...monthTargets.map((t) =>
+        prisma.monthEntry.findMany({
+          where: { userId, year: t.targetYear, month: t.targetMonthNum },
+        })
+      ),
+    ]);
 
     const monthInstallments = allInstallments
       .filter((inst) => {
@@ -63,7 +88,6 @@ router.get('/summary/:year/:month', async (req: Request, res: Response) => {
       0
     );
 
-    const cards = await prisma.card.findMany({ where: { userId } });
     const today = new Date();
     const currentDay = today.getDate();
 
@@ -85,32 +109,23 @@ router.get('/summary/:year/:month', async (req: Request, res: Response) => {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
 
-    const sixMonthsData = [];
-    for (let i = 5; i >= 0; i--) {
-      const targetMonth = new Date(yearInt, monthInt - 1 - i);
-      const targetYear = targetMonth.getFullYear();
-      const targetMonthNum = targetMonth.getMonth() + 1;
-
-      const monthEntries = await prisma.monthEntry.findMany({
-        where: { userId, year: targetYear, month: targetMonthNum },
-      });
-
+    const sixMonthsData = monthTargets.map((t, index) => {
+      const monthEntries = sixMonthEntries[index];
       const monthIncome = monthEntries
         .filter((e) => e.type === 'income')
         .reduce((sum, e) => sum + e.amount, 0);
-
       const monthExpense = monthEntries
         .filter((e) => e.type === 'expense')
         .reduce((sum, e) => sum + e.amount, 0);
 
-      sixMonthsData.push({
-        month: targetMonthNum,
-        year: targetYear,
-        label: targetMonth.toLocaleDateString('pt-BR', { month: 'short' }),
+      return {
+        month: t.targetMonthNum,
+        year: t.targetYear,
+        label: t.labelDate.toLocaleDateString('pt-BR', { month: 'short' }),
         income: monthIncome,
         expense: monthExpense,
-      });
-    }
+      };
+    });
 
     res.json({
       summary: {

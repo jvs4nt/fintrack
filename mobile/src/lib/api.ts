@@ -67,6 +67,11 @@ function resolveApiBaseUrl(): string {
 
 const API_BASE = resolveApiBaseUrl();
 
+function syncQuery(sync?: boolean): string {
+  if (sync === false) return '?sync=0';
+  return '';
+}
+
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${API_BASE}${path}`;
@@ -144,7 +149,8 @@ export const api = {
   },
 
   months: {
-    getEntries: (year: number, month: number) => fetchApi<MonthEntry[]>(`/months/${year}/${month}`),
+    getEntries: (year: number, month: number, options?: { sync?: boolean }) =>
+      fetchApi<MonthEntry[]>(`/months/${year}/${month}${syncQuery(options?.sync)}`),
     syncFixed: (year: number, month: number, mode: 'create-only' | 'upsert' = 'create-only') =>
       fetchApi<SyncFixedResponse>(`/months/${year}/${month}/sync-fixed`, {
         method: 'POST',
@@ -194,8 +200,10 @@ export const api = {
   },
 
   dashboard: {
-    getSummary: (year: number, month: number) =>
-      fetchApi<DashboardSummary>(`/dashboard/summary/${year}/${month}`),
+    getSummary: (year: number, month: number, options?: { sync?: boolean }) =>
+      fetchApi<DashboardSummary>(
+        `/dashboard/summary/${year}/${month}${syncQuery(options?.sync)}`
+      ),
   },
 
   settings: {

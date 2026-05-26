@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { parseYearMonth, shouldSyncFixed } from '../lib/monthRouteQuery';
 import {
   syncFixedForMonth,
   SyncMode,
@@ -14,17 +15,29 @@ router.get('/:year/:month', async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const { year, month } = req.params;
 
+    const parsed = parseYearMonth(year, month);
+    if (!parsed.ok) {
+      return res.status(400).json({ error: parsed.error });
+    }
+
+    const { yearInt, monthInt } = parsed;
+
+    if (shouldSyncFixed(req)) {
+      await syncFixedForMonth(userId, yearInt, monthInt, { mode: 'create-only' });
+    }
+
     const entries = await prisma.monthEntry.findMany({
       where: {
         userId,
-        year: routeParamInt(year),
-        month: routeParamInt(month),
+        year: yearInt,
+        month: monthInt,
       },
       orderBy: { date: 'asc' },
     });
 
     res.json(entries);
   } catch (error) {
+    console.error('GET months:', error);
     res.status(500).json({ error: 'Erro ao buscar lançamentos do mês' });
   }
 });
@@ -35,11 +48,11 @@ router.post('/:year/:month/sync-fixed', async (req: Request, res: Response) => {
     const { year, month } = req.params;
     const mode = (req.body?.mode as SyncMode) ?? 'create-only';
 
-    const yearInt = routeParamInt(year);
-    const monthInt = routeParamInt(month);
-    if (!Number.isFinite(yearInt) || !Number.isFinite(monthInt) || monthInt < 1 || monthInt > 12) {
-      return res.status(400).json({ error: 'Ano ou mês inválido' });
+    const parsed = parseYearMonth(year, month);
+    if (!parsed.ok) {
+      return res.status(400).json({ error: parsed.error });
     }
+    const { yearInt, monthInt } = parsed;
 
     const { created, updated } = await syncFixedForMonth(userId, yearInt, monthInt, { mode });
 

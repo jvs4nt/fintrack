@@ -58,7 +58,7 @@ Igual a incomes + **`paymentMethod`** obrigatório no POST + `POST /:id/propagat
 
 | Método | Rota | Body / Notas |
 |--------|------|----------------|
-| GET | `/:year/:month` | `MonthEntry[]` ordenado por date |
+| GET | `/:year/:month` | `MonthEntry[]` ordenado por date — por padrão roda `syncFixedForMonth` (`create-only`) antes da listagem; `?sync=0` ou `?sync=false` pula o sync; 400 se ano/mês inválidos |
 | POST | `/:year/:month/sync-fixed` | `{ mode?: 'create-only' \| 'upsert' }` → `{ message, created, updated }` — normaliza duplicatas de fixo no mês (mesmo `type` + `fixedRefId`, mantém o menor `id`); 400 se ano/mês inválidos; 500 `{ error }` e, fora de `production`, `{ details }` (mensagem interna para depuração) |
 | POST | `/entry` | `{ year, month, type, description, amount, date, category, paymentMethod?, note?, isFixed? }` |
 | PUT | `/entry/:id` | campos parciais; coerção year/month/amount |
@@ -104,7 +104,7 @@ Igual a incomes + **`paymentMethod`** obrigatório no POST + `POST /:id/propagat
 
 | Método | Rota | Resposta |
 |--------|------|----------|
-| GET | `/summary/:year/:month` | ver abaixo |
+| GET | `/summary/:year/:month` | ver abaixo — por padrão sync de fixos no mês; `?sync=0` ou `?sync=false` pula; leituras de parcelas/cartões/gráfico 6 meses em paralelo no servidor |
 
 ```typescript
 {

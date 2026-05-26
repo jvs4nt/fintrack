@@ -86,7 +86,6 @@ export default function MonthsScreen() {
     if (!initDone) return;
     setLoading(true);
     try {
-      await api.months.syncFixed(selectedYear, selectedMonth);
       const [entriesData, installmentsData, incomeCats, expenseCats, budgetData] = await Promise.all([
         api.months.getEntries(selectedYear, selectedMonth),
         api.installments.getByMonth(selectedYear, selectedMonth),

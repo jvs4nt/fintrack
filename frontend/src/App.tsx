@@ -33,7 +33,6 @@ function App() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [payday, setPayday] = useState(1);
-  const [isInitializing, setIsInitializing] = useState(true);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [isAgentModalClosing, setIsAgentModalClosing] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -60,44 +59,28 @@ function App() {
   };
 
   useEffect(() => {
-    if (!session) {
-      setIsInitializing(false);
-      return;
-    }
+    if (!session) return;
 
-    async function init() {
-      setIsInitializing(true);
+    (async () => {
       try {
         const settings = await api.settings.get();
         setPayday(settings.payday);
-        
-        // Calcular o mês de planejamento com base no payday
+
         const today = new Date();
         const currentDay = today.getDate();
-        
-        // Se hoje for maior que o dia de receber, planeja o mês SUBSERQUENTE (mês atual + 2)
-        // Se hoje for menor ou igual ao dia de receber, planeja o PRÓXIMO mês (mês atual + 1)
-        // Ex: Hoje dia 10, payday 11 -> Planeja Mês + 1
-        //     Hoje dia 12, payday 11 -> Planeja Mês + 2
-        
         const planningDate = new Date();
         if (currentDay > settings.payday) {
-          // Já recebeu este mês, planeja o PRÓXIMO mês
           planningDate.setMonth(today.getMonth() + 1);
         } else {
-          // Ainda não recebeu este mês, o planejamento atual é o PRÓPRIO mês
           planningDate.setMonth(today.getMonth());
         }
-        
+
         setSelectedYear(planningDate.getFullYear());
         setSelectedMonth(planningDate.getMonth() + 1);
       } catch (err) {
-        console.error("Erro ao inicializar:", err);
-      } finally {
-        setIsInitializing(false);
+        console.error('Erro ao inicializar:', err);
       }
-    }
-    init();
+    })();
   }, [session]);
 
   useEffect(() => {
@@ -214,7 +197,6 @@ function App() {
 
   if (authLoading) return <LoadingLogo />;
   if (!session) return <Login />;
-  if (isInitializing) return <LoadingLogo />;
 
   return (
     <div className={`app-container ${isMobileMenuOpen ? 'menu-open' : ''}`}>

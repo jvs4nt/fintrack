@@ -56,7 +56,11 @@ Props repassadas às páginas com mês:
 - Base: `import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333/api'`
 - Função interna `fetchApi<T>(endpoint, options)` — injeta `Authorization: Bearer` da sessão Supabase
 - Retorna objeto com namespaces: `fixedIncomes`, `fixedExpenses`, `months`, `cards`, `installments`, `savings`, `dashboard`, `settings`, `agent`
+- `months.getEntries(y, m, { sync?: boolean })` — sync no servidor por padrão; `{ sync: false }` → `?sync=0`
+- `dashboard.getSummary(y, m, { sync?: boolean })` — idem
 - Erro: `throw new Error(errorData.error || status)`
+
+**Performance:** Meses chama só `getEntries` no load (sem `POST sync-fixed` antes); botão “Sincronizar fixos” usa `syncFixed(..., 'upsert')`. Após login, `App.tsx` não bloqueia o shell em `settings.get()` (payday/mês ajustam quando a resposta chega).
 
 **Regra:** novos endpoints → adicionar método aqui + tipo em `types.ts`.
 

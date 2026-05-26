@@ -6,7 +6,7 @@ App React Native na pasta [`mobile/`](../mobile/) — **Expo SDK 54**, **Expo Ro
 
 - Mesma API que o web: ver [backend/API.md](backend/API.md).
 - Base URL: prefixo `/api`; header `Authorization: Bearer` com JWT do Supabase Auth — ver [CONVENTIONS.md](CONVENTIONS.md).
-- Cliente HTTP: [`mobile/src/lib/api.ts`](../mobile/src/lib/api.ts) (espelho do `frontend` `useApi`).
+- Cliente HTTP: [`mobile/src/lib/api.ts`](../mobile/src/lib/api.ts) (espelho do `frontend` `useApi`) — `getEntries` / `getSummary` com `?sync=0` opcional; Meses usa um `GET` com sync embutido no load.
 - Tipos DTO: [`mobile/src/types.ts`](../mobile/src/types.ts) alinhados a [`frontend/src/types.ts`](../frontend/src/types.ts).
 
 ## Variáveis de ambiente
