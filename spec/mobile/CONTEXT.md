@@ -13,9 +13,10 @@ App React Native na pasta [`mobile/`](../mobile/) — **Expo SDK 54**, **Expo Ro
 
 Arquivo [`mobile/.env.example`](../mobile/.env.example). Copiar para `mobile/.env` (não commitar).
 
-- `EXPO_PUBLIC_API_BASE_URL` — em dispositivo físico na mesma rede Wi‑Fi, use `http://<IP_LAN_DO_MAC>:3333/api` (não `localhost`). Se deixar `localhost` no `.env` enquanto usa **Expo Go no celular**, o `mobile/src/lib/api.ts` tenta trocar pelo host do Metro (mesmo IP do QR) em desenvolvimento.
-- **Emulador Android:** `localhost` no emulador não é o seu Mac. No **emulador** (não em aparelho físico), o app reescreve `localhost` / `127.0.0.1` para `10.0.2.2` em `mobile/src/lib/api.ts`. O backend precisa estar escutando na porta configurada (ex.: `3333`). Em aparelho físico, prefira `http://<IP_LAN>:3333/api` na mesma rede Wi‑Fi.
+- `EXPO_PUBLIC_API_BASE_URL` — porta e path `/api` (ex.: `http://192.168.1.x:3333/api`). Em **dev**, o host é sobrescrito pelo IP do Metro (scriptURL do Expo Go), para não depender de IP fixo no `.env`. Em dispositivo físico, Mac e celular na mesma Wi‑Fi; backend deve escutar em `0.0.0.0` (ver `backend/server.ts`).
+- **Emulador Android:** no emulador (não em aparelho físico), `mobile/src/lib/api.ts` reescreve **qualquer** host do `.env` para `10.0.2.2` (alias do Mac no AVD). O backend precisa estar rodando na porta do `.env` (ex.: `3333`). Em aparelho físico (Expo Go), use `http://<IP_LAN>:3333/api` na mesma rede Wi‑Fi. HTTP em dev exige `usesCleartextTraffic` em `app.json` (já configurado).
 - `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — mesmo projeto que o frontend Vite (`VITE_*`). Sem essas variáveis o app ainda sobe (placeholders internos), mas o login real exige `.env` preenchido; a tela de login mostra aviso quando faltam.
+- **Sessão Supabase:** persistida em AsyncStorage (`mobile/src/lib/supabase.ts`). Se o refresh token estiver inválido (logout em outro cliente, revogação no dashboard, troca de projeto), `getSessionSafe` em `mobile/src/lib/authSession.ts` limpa o storage local (`signOut` com `scope: 'local'`) e o app redireciona para login sem erro no console.
 
 ## Paridade de produto (módulos)
 
@@ -25,10 +26,10 @@ Espelha [frontend/PAGES.md](frontend/PAGES.md):
 |-------------|--------|
 | `(auth)/login` | Login Supabase |
 | `(app)/index` | Dashboard — mês de planejamento (payday); **recarrega ao focar a aba** (tabs mantêm a tela montada) |
-| `(app)/months` | Meses / MonthEntry |
+| `(app)/months` | Meses / MonthEntry — seções Ganhos, Gastos, Parcelas, Resumo (sem Metas do mês; web mantém metas em [PAGES.md](frontend/PAGES.md)) |
 | `(app)/fixed` | Fixos |
 | `(app)/cards` | Cartões + parcelas |
-| `(app)/savings` | Reservas |
+| `(app)/savings` | Reservas — **aba oculta** (`FEATURE_SAVINGS` em `mobile/src/config/features.ts`); rota e API mantidas |
 | `(app)/agent` | Agente (`POST /agent/chat`) — **aba oculta** na barra inferior até release dedicada; tela e API permanecem no projeto |
 | `(app)/settings` | Payday + sair |
 

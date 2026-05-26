@@ -75,13 +75,13 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ error: 'Rota não encontrada' });
 });
 
-app.listen(PORT, () => {
+app.listen(Number(PORT), '0.0.0.0', () => {
   console.log('');
   console.log('╔════════════════════════════════════════╗');
   console.log('║        🏦 FinTrack API Server (TS)     ║');
   console.log('╠════════════════════════════════════════╣');
-  console.log(`║  📍 Porta: ${PORT}`);
-  console.log('║  🔗 http://localhost:3333');
+  console.log(`║  📍 Porta: ${PORT} (0.0.0.0)`);
+  console.log(`║  🔗 http://localhost:${PORT}`);
   console.log('║  ✅ Postgres + Supabase Auth');
   console.log('╚════════════════════════════════════════╝');
   console.log('');

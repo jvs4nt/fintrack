@@ -7,6 +7,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 import { useAuth } from '@/src/context/AuthContext';
+import { FEATURE_SAVINGS } from '@/src/config/features';
 import LoadingLogo from '@/src/components/LoadingLogo';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
@@ -113,14 +114,19 @@ export default function AppLayout() {
           ),
         }}
       />
+      {/* Reservas: rota mantida; aba oculta até retomar FEATURE_SAVINGS. */}
       <Tabs.Screen
         name="savings"
-        options={{
-          title: 'Reservas',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon outline="wallet-outline" solid="wallet" color={color} focused={focused} />
-          ),
-        }}
+        options={
+          FEATURE_SAVINGS
+            ? {
+                title: 'Reservas',
+                tabBarIcon: ({ color, focused }) => (
+                  <TabIcon outline="wallet-outline" solid="wallet" color={color} focused={focused} />
+                ),
+              }
+            : { href: null }
+        }
       />
       {/* Agente: rota mantida; aba oculta até release dedicada. */}
       <Tabs.Screen name="agent" options={{ href: null }} />

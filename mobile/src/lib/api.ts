@@ -15,15 +15,29 @@ import {
   SyncFixedResponse,
   PropagateFixedResponse,
 } from '@/src/types';
+import Constants from 'expo-constants';
 import { NativeModules, Platform } from 'react-native';
 import * as Device from 'expo-device';
-import { supabase } from '@/src/lib/supabase';
+import { getSessionSafe, recoverStaleAuthSession } from '@/src/lib/authSession';
 
 const DEFAULT_API_BASE = 'http://localhost:3333/api';
 
-/** Host da máquina que serve o JS (Metro), útil quando `.env` usa `localhost` no Expo Go no celular. */
+function hostFromHostUri(hostUri: string | undefined): string | null {
+  if (!hostUri) return null;
+  const hostname = hostUri.split(':')[0]?.trim();
+  if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') return hostname;
+  return null;
+}
+
+/** Host da máquina que serve o JS (Metro) — mesmo IP que o Expo Go usa para o bundle. */
 function getDevPackagerHost(): string | null {
   if (!__DEV__) return null;
+
+  const fromConstants =
+    hostFromHostUri(Constants.expoConfig?.hostUri) ??
+    hostFromHostUri(Constants.expoGoConfig?.debuggerHost);
+  if (fromConstants) return fromConstants;
+
   const scriptURL = NativeModules.SourceCode?.scriptURL as string | undefined;
   if (!scriptURL) return null;
   try {
@@ -37,27 +51,30 @@ function getDevPackagerHost(): string | null {
 }
 
 /**
- * - Emulador Android: `localhost` → `10.0.2.2` (host do Mac).
- * - Expo Go / device físico com `localhost` no `.env`: usa o mesmo host do Metro (LAN), senão o telefone fala com ele mesmo.
- * - Simulador iOS: mantém `localhost` se o bundle vier de localhost (backend no Mac em 127.0.0.1).
+ * - Emulador Android: host do Mac via `10.0.2.2`.
+ * - Dev (Expo Go / simulador): host do Metro (scriptURL) — o telefone já alcança esse IP para o bundle.
+ * - Produção ou sem Metro: `EXPO_PUBLIC_API_BASE_URL` do `.env`.
  */
 function resolveApiBaseUrl(): string {
   const raw = (process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_API_BASE).replace(/\/$/, '');
   try {
     const url = new URL(raw);
-    const loopback = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-    if (!loopback) return raw;
 
     if (Platform.OS === 'android' && !Device.isDevice) {
       url.hostname = '10.0.2.2';
       return url.toString().replace(/\/$/, '');
     }
 
-    const packagerHost = getDevPackagerHost();
-    if (packagerHost) {
-      url.hostname = packagerHost;
-      return url.toString().replace(/\/$/, '');
+    if (__DEV__) {
+      const packagerHost = getDevPackagerHost();
+      if (packagerHost) {
+        url.hostname = packagerHost;
+        return url.toString().replace(/\/$/, '');
+      }
     }
+
+    const loopback = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+    if (!loopback) return raw;
 
     return raw;
   } catch {
@@ -76,9 +93,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
   const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${API_BASE}${path}`;
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await getSessionSafe();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -92,10 +107,28 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
     headers,
   };
 
-  const response = await fetch(url, config);
+  let response: Response;
+  try {
+    response = await fetch(url, config);
+  } catch (e) {
+    const packager = getDevPackagerHost();
+    const hint = __DEV__
+      ? Platform.OS === 'android' && !Device.isDevice
+        ? ' No emulador, inicie o backend no Mac (porta 3333).'
+        : packager
+          ? ` URL usada: ${API_BASE} (host do Metro: ${packager}). Backend rodando nessa máquina?`
+          : ` URL usada: ${API_BASE}. Atualize EXPO_PUBLIC_API_BASE_URL ou abra via Expo Go na mesma rede.`
+      : '';
+    const msg = e instanceof Error ? e.message : 'Falha de rede';
+    throw new Error(
+      msg.toLowerCase().includes('network request failed') || msg.toLowerCase().includes('failed to fetch')
+        ? `Não foi possível conectar ao servidor.${hint}`
+        : msg
+    );
+  }
 
   if (response.status === 401) {
-    await supabase.auth.signOut();
+    await recoverStaleAuthSession();
     throw new Error('Sessão expirada. Faça login novamente.');
   }
 

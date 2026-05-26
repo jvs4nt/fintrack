@@ -14,6 +14,7 @@ import Fixed from './pages/Fixed';
 import Cards from './pages/Cards';
 import Savings from './pages/Savings';
 import Agent from './pages/Agent';
+import { FEATURE_SAVINGS } from './config/features';
 
 // Navegação principal do aplicativo
 const navigation = [
@@ -21,7 +22,7 @@ const navigation = [
   { id: 'months', label: 'Meses', icon: '📅' },
   { id: 'fixed', label: 'Fixos', icon: '🔄' },
   { id: 'cards', label: 'Cartões', icon: '💳' },
-  { id: 'savings', label: 'Reservas', icon: '🏦' },
+  ...(FEATURE_SAVINGS ? [{ id: 'savings' as const, label: 'Reservas', icon: '🏦' }] : []),
   { id: 'settings', label: 'Ajustes', icon: '⚙️' },
 ];
 
@@ -84,6 +85,12 @@ function App() {
   }, [session]);
 
   useEffect(() => {
+    if (!FEATURE_SAVINGS && currentPage === 'savings') {
+      setCurrentPage('dashboard');
+    }
+  }, [currentPage]);
+
+  useEffect(() => {
     if (!isAgentModalOpen) return;
 
     const onEsc = (event: KeyboardEvent) => {
@@ -143,7 +150,7 @@ function App() {
       case 'cards':
         return <Cards />;
       case 'savings':
-        return <Savings />;
+        return FEATURE_SAVINGS ? <Savings /> : <Dashboard {...pageProps} />;
       case 'agent':
         return <Dashboard {...pageProps} />;
       case 'settings':

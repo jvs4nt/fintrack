@@ -3,7 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { PageShell } from '@/components/PageShell';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
-import { SixMonthBars } from '@/components/SixMonthBars';
+import { SixMonthLines } from '@/components/SixMonthLines';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 import { api } from '@/src/lib/api';
@@ -152,7 +152,7 @@ export default function DashboardScreen() {
       ) : null}
 
       <Text style={styles.sectionTitle}>Ganhos vs gastos (6 meses)</Text>
-      <SixMonthBars data={sixMonthsData} />
+      <SixMonthLines data={sixMonthsData} />
 
       <Text style={styles.sectionTitle}>Últimos lançamentos</Text>
       <View style={styles.tableCard}>

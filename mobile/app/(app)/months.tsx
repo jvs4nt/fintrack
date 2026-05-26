@@ -18,7 +18,7 @@ import { api } from '@/src/lib/api';
 import { ensureCategoryExists } from '@/src/lib/ensureCategory';
 import { computePlanningMonth } from '@/src/hooks/usePlanningMonth';
 import { confirmDestructive, toastMessage } from '@/src/utils/alerts';
-import type { BudgetItem, Category, InstallmentMonthView, MonthEntry } from '@/src/types';
+import type { Category, InstallmentMonthView, MonthEntry } from '@/src/types';
 
 const MONTHS = [
   { id: 1, name: 'Janeiro' },
@@ -36,7 +36,11 @@ const MONTHS = [
 ];
 
 const currentYear = new Date().getFullYear();
-const YEARS = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
+const MIN_YEAR = 2024;
+const YEARS = Array.from(
+  { length: Math.max(1, currentYear + 5 - MIN_YEAR + 1) },
+  (_, i) => MIN_YEAR + i
+);
 
 const PAYMENT_METHODS = ['PIX', 'Débito', 'Crédito', 'Dinheiro', 'Boleto', 'Transferência'];
 
@@ -46,7 +50,7 @@ function formatBrl(n: number) {
 
 export default function MonthsScreen() {
   const insets = useSafeAreaInsets();
-  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedYear, setSelectedYear] = useState(Math.max(currentYear, MIN_YEAR));
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [initDone, setInitDone] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -54,9 +58,6 @@ export default function MonthsScreen() {
   const [installments, setInstallments] = useState<InstallmentMonthView[]>([]);
   const [incomeCategories, setIncomeCategories] = useState<Category[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<Category[]>([]);
-  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
-  const [budgetLimits, setBudgetLimits] = useState<Record<string, string>>({});
-  const [savingBudgets, setSavingBudgets] = useState(false);
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<MonthEntry | null>(null);
   const [form, setForm] = useState({
@@ -74,7 +75,7 @@ export default function MonthsScreen() {
       try {
         const settings = await api.settings.get();
         const { year, month } = computePlanningMonth(settings.payday);
-        setSelectedYear(year);
+        setSelectedYear(Math.max(year, MIN_YEAR));
         setSelectedMonth(month);
       } catch {
         /* keep defaults */
@@ -88,23 +89,16 @@ export default function MonthsScreen() {
     if (!initDone) return;
     setLoading(true);
     try {
-      const [entriesData, installmentsData, incomeCats, expenseCats, budgetData] = await Promise.all([
+      const [entriesData, installmentsData, incomeCats, expenseCats] = await Promise.all([
         api.months.getEntries(selectedYear, selectedMonth),
         api.installments.getByMonth(selectedYear, selectedMonth),
         api.categories.getAll('income'),
         api.categories.getAll('expense'),
-        api.budgets.getByMonth(selectedYear, selectedMonth),
       ]);
       setEntries(entriesData ?? []);
       setInstallments(installmentsData ?? []);
       setIncomeCategories(incomeCats ?? []);
       setExpenseCategories(expenseCats ?? []);
-      setBudgetItems(budgetData.budgets ?? []);
-      const limits: Record<string, string> = {};
-      for (const b of budgetData.budgets ?? []) {
-        limits[b.category] = String(b.limit);
-      }
-      setBudgetLimits(limits);
     } catch (e) {
       console.error(e);
     } finally {
@@ -123,26 +117,6 @@ export default function MonthsScreen() {
       loadMonthData();
     } catch (e) {
       toastMessage('Erro', e instanceof Error ? e.message : 'Falha ao sincronizar');
-    }
-  }
-
-  async function handleSaveBudgets() {
-    setSavingBudgets(true);
-    try {
-      const budgets = expenseCategories
-        .map((cat) => ({
-          category: cat.name,
-          limitAmount: parseFloat(budgetLimits[cat.name] || '0'),
-        }))
-        .filter((b) => b.limitAmount > 0);
-      await api.budgets.save(selectedYear, selectedMonth, budgets);
-      toastMessage('Metas salvas');
-      const budgetData = await api.budgets.getByMonth(selectedYear, selectedMonth);
-      setBudgetItems(budgetData.budgets ?? []);
-    } catch (e) {
-      toastMessage('Erro', e instanceof Error ? e.message : 'Falha ao salvar metas');
-    } finally {
-      setSavingBudgets(false);
     }
   }
 
@@ -231,62 +205,61 @@ export default function MonthsScreen() {
   const totalExpense = expenses.reduce((s, e) => s + e.amount, 0);
   const balance = totalIncome - totalExpense;
   const totalInstallments = installments.reduce((s, i) => s + i.installmentAmount, 0);
-  const spentByCategory: Record<string, number> = {};
-  for (const e of expenses) {
-    spentByCategory[e.category] = (spentByCategory[e.category] ?? 0) + e.amount;
-  }
   const formCategories = form.type === 'income' ? incomeCategories : expenseCategories;
 
   return (
     <TabScreenTransition>
     <View style={[styles.root, { paddingTop: insets.top + Theme.spacingMd }]}>
-      <View style={styles.pageHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.pageTitle}>Meses</Text>
-          <Text style={styles.pageSubtitle}>Lançamentos e metas do mês</Text>
+      <View style={styles.chrome}>
+        <View style={styles.pageHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.pageTitle}>Meses</Text>
+            <Text style={styles.pageSubtitle}>Lançamentos do mês</Text>
+          </View>
+          <Pressable style={styles.btnSecondary} onPress={handleSyncUpsert}>
+            <Text style={styles.btnSecondaryText}>Sincronizar fixos</Text>
+          </Pressable>
         </View>
-        <Pressable style={styles.btnSecondary} onPress={handleSyncUpsert}>
-          <Text style={styles.btnSecondaryText}>Sincronizar fixos</Text>
-        </Pressable>
-      </View>
 
-      <View style={styles.yearRow}>
-        <Text style={styles.label}>Ano</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {YEARS.map((y) => (
+        <View style={styles.yearRow}>
+          <Text style={styles.label}>Ano</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {YEARS.map((y) => (
+              <Pressable
+                key={y}
+                onPress={() => setSelectedYear(y)}
+                style={[styles.yearChip, selectedYear === y && styles.yearChipActive]}>
+                <Text style={[styles.yearChipText, selectedYear === y && styles.yearChipTextActive]}>{y}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.monthTabs}
+          contentContainerStyle={styles.monthTabsContent}>
+          {MONTHS.map((m) => (
             <Pressable
-              key={y}
-              onPress={() => setSelectedYear(y)}
-              style={[styles.yearChip, selectedYear === y && styles.yearChipActive]}>
-              <Text style={[styles.yearChipText, selectedYear === y && styles.yearChipTextActive]}>{y}</Text>
+              key={m.id}
+              onPress={() => setSelectedMonth(m.id)}
+              style={[styles.tab, selectedMonth === m.id && styles.tabActive]}>
+              <Text
+                style={[styles.tabText, selectedMonth === m.id && styles.tabTextActive]}
+                numberOfLines={2}>
+                {m.name}
+              </Text>
             </Pressable>
           ))}
         </ScrollView>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.monthTabs}
-        contentContainerStyle={styles.monthTabsContent}>
-        {MONTHS.map((m) => (
-          <Pressable
-            key={m.id}
-            onPress={() => setSelectedMonth(m.id)}
-            style={[styles.tab, selectedMonth === m.id && styles.tabActive]}>
-            <Text
-              style={[styles.tabText, selectedMonth === m.id && styles.tabTextActive]}
-              numberOfLines={2}>
-              {m.name}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      {loading ? (
-        <ActivityIndicator style={{ marginTop: 24 }} color={Theme.accentPrimary} />
-      ) : (
-        <ScrollView contentContainerStyle={styles.scroll}>
+      <View style={styles.contentArea}>
+        {loading ? (
+          <ActivityIndicator style={styles.loadingSpinner} color={Theme.accentPrimary} />
+        ) : (
+          <ScrollView style={styles.contentScroll} contentContainerStyle={styles.scroll}>
           <View style={styles.sectionRow}>
             <Text style={styles.h2}>Ganhos</Text>
             <Pressable style={styles.btnPrimarySm} onPress={openNewEntry}>
@@ -307,7 +280,7 @@ export default function MonthsScreen() {
             <Text style={styles.empty}>Nenhum ganho neste mês</Text>
           )}
 
-          <Text style={[styles.h2, { marginTop: Theme.spacingLg }]}>Gastos</Text>
+          <Text style={[styles.h2, styles.sectionHeading]}>Gastos</Text>
           {expenses.length ? (
             expenses.map((entry) => (
               <EntryRow
@@ -324,7 +297,7 @@ export default function MonthsScreen() {
 
           {installments.length > 0 ? (
             <>
-              <Text style={[styles.h2, { marginTop: Theme.spacingLg }]}>Parcelas do mês</Text>
+              <Text style={[styles.h2, styles.sectionHeading]}>Parcelas do mês</Text>
               {installments.map((inst) => (
                 <View key={inst.id} style={[styles.card, styles.borderWarning]}>
                   <Text style={styles.entryName}>{inst.description}</Text>
@@ -339,60 +312,7 @@ export default function MonthsScreen() {
             </>
           ) : null}
 
-          <View style={[styles.card, { marginTop: Theme.spacingLg }]}>
-            <View style={styles.sectionRow}>
-              <Text style={styles.h2}>Metas do mês</Text>
-              <Pressable
-                style={[styles.btnPrimarySm, savingBudgets && { opacity: 0.6 }]}
-                onPress={handleSaveBudgets}
-                disabled={savingBudgets}>
-                <Text style={styles.btnPrimarySmText}>{savingBudgets ? '...' : 'Salvar metas'}</Text>
-              </Pressable>
-            </View>
-            <Text style={styles.hint}>Limites por categoria de despesa (80% / 100%)</Text>
-            {expenseCategories.map((cat) => {
-              const spent = spentByCategory[cat.name] ?? 0;
-              const limit = parseFloat(budgetLimits[cat.name] || '0');
-              const percent = limit > 0 ? (spent / limit) * 100 : 0;
-              const existing = budgetItems.find((b) => b.category === cat.name);
-              const derivedStatus =
-                limit <= 0 ? 'ok' : percent >= 100 ? 'exceeded' : percent >= 80 ? 'warning' : 'ok';
-              const displayStatus = existing?.status ?? derivedStatus;
-              const barColor =
-                displayStatus === 'exceeded'
-                  ? Theme.accentDanger
-                  : displayStatus === 'warning'
-                    ? Theme.accentWarning
-                    : Theme.accentPrimary;
-
-              return (
-                <View key={cat.id} style={{ marginBottom: Theme.spacingMd }}>
-                  <View style={styles.budgetHeader}>
-                    <Text style={styles.entryName}>{cat.name}</Text>
-                    <Text style={styles.entryMeta}>
-                      {formatBrl(spent)}
-                      {limit > 0 ? ` / ${formatBrl(limit)} (${Math.round(percent)}%)` : ''}
-                    </Text>
-                  </View>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="decimal-pad"
-                    placeholder="Limite (R$)"
-                    placeholderTextColor={Theme.textMuted}
-                    value={budgetLimits[cat.name] ?? ''}
-                    onChangeText={(t) => setBudgetLimits({ ...budgetLimits, [cat.name]: t })}
-                  />
-                  {limit > 0 ? (
-                    <View style={styles.progressTrack}>
-                      <View style={[styles.progressFill, { width: `${Math.min(percent, 100)}%`, backgroundColor: barColor }]} />
-                    </View>
-                  ) : null}
-                </View>
-              );
-            })}
-          </View>
-
-          <Text style={[styles.h2, { marginTop: Theme.spacingLg }]}>Resumo</Text>
+          <Text style={[styles.h2, styles.sectionHeading]}>Resumo</Text>
           <View style={styles.card}>
             <Row label="Total ganhos" value={formatBrl(totalIncome)} valueColor={Theme.accentPrimary} />
             <Row label="Total gastos" value={formatBrl(totalExpense)} valueColor={Theme.accentDanger} />
@@ -409,8 +329,9 @@ export default function MonthsScreen() {
               />
             ) : null}
           </View>
-        </ScrollView>
-      )}
+          </ScrollView>
+        )}
+      </View>
 
       <SheetModal
         visible={showEntryModal}
@@ -559,6 +480,10 @@ function EntryRow({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Theme.bgPrimary, paddingHorizontal: Theme.spacingLg },
+  chrome: { flexShrink: 0 },
+  contentArea: { flex: 1, justifyContent: 'flex-start' },
+  contentScroll: { flex: 1 },
+  loadingSpinner: { alignSelf: 'flex-start', marginTop: Theme.spacingMd },
   pageHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: Theme.spacingMd, gap: Theme.spacingSm },
   pageTitle: { fontFamily: FontFamily.uiSemiBold, fontSize: 26, color: Theme.textPrimary },
   pageSubtitle: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.textSecondary, marginTop: 4 },
@@ -585,9 +510,9 @@ const styles = StyleSheet.create({
   yearChipActive: { borderColor: Theme.accentPrimary, backgroundColor: Theme.bgSecondary },
   yearChipText: { fontFamily: FontFamily.ui, color: Theme.textSecondary },
   yearChipTextActive: { color: Theme.accentPrimary },
-  monthTabs: { marginBottom: Theme.spacingMd },
+  monthTabs: { marginBottom: Theme.spacingMd, flexGrow: 0 },
   monthTabsContent: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingVertical: Theme.spacingXs,
   },
   tab: {
@@ -614,6 +539,7 @@ const styles = StyleSheet.create({
   tabTextActive: { color: Theme.accentPrimary },
   scroll: { paddingBottom: Theme.spacingXl * 3 },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacingSm },
+  sectionHeading: { marginTop: Theme.spacingLg, marginBottom: Theme.spacingSm },
   h2: { fontFamily: FontFamily.uiSemiBold, fontSize: 17, color: Theme.textPrimary },
   btnPrimarySm: {
     backgroundColor: Theme.accentPrimary,
@@ -637,8 +563,6 @@ const styles = StyleSheet.create({
   entryActions: { flexDirection: 'row', gap: Theme.spacingLg, marginTop: Theme.spacingSm },
   linkBtn: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.accentPrimary },
   empty: { fontFamily: FontFamily.ui, color: Theme.textMuted, marginBottom: Theme.spacingMd },
-  hint: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textMuted, marginBottom: Theme.spacingMd },
-  budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 },
   input: {
     fontFamily: FontFamily.ui,
     fontSize: 16,
@@ -650,14 +574,6 @@ const styles = StyleSheet.create({
     padding: Theme.spacingMd,
     marginBottom: Theme.spacingSm,
   },
-  progressTrack: {
-    height: 6,
-    backgroundColor: Theme.bgTertiary,
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginTop: 4,
-  },
-  progressFill: { height: '100%', borderRadius: 3 },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

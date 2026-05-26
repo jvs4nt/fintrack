@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import * as Linking from 'expo-linking';
+import { getSessionSafe } from '@/src/lib/authSession';
 import { supabase } from '@/src/lib/supabase';
 
 type AuthContextValue = {
@@ -20,11 +21,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session ?? null);
-      setLoading(false);
-    });
+    getSessionSafe()
+      .then((next) => {
+        if (!mounted) return;
+        setSession(next);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setSession(null);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoading(false);
+      });
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, next) => {
@@ -56,7 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
+    setSession(null);
   }, []);
 
   const value = useMemo(

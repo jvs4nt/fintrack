@@ -8,7 +8,7 @@
 | months | `Months.tsx` | `months.*`, `installments.getByMonth` |
 | fixed | `Fixed.tsx` | `fixedIncomes.*`, `fixedExpenses.*` |
 | cards | `Cards.tsx` | `cards.*`, `installments.*` |
-| savings | `Savings.tsx` | `savings.*` |
+| savings | `Savings.tsx` | `savings.*` — **oculto** na UI (`FEATURE_SAVINGS = false`) |
 | settings | inline em `App.tsx` | `settings.get`, `settings.update` |
 | agent | modal + `Agent.tsx` | `agent.chat` |
 
@@ -17,7 +17,7 @@
 - Props: `selectedYear`, `selectedMonth` (do App — **não** tem seletor próprio de mês)
 - Card destaque: `summary.netBalance` (ganhos − gastos − parcelas)
 - Tabela **Parcelas do mês** (`monthInstallments`)
-- Cards ganhos/gastos/saldo, `nextDueCard`, gráfico 6 meses, últimos 5 `lastEntries`
+- Cards ganhos/gastos/saldo, `nextDueCard`, gráfico de linhas 6 meses (ganhos verde / gastos vermelho), últimos 5 `lastEntries`
 
 ## Months
 
@@ -41,8 +41,9 @@
 - Barra de limite usado (soma parcelas ativas / limit)
 - CRUD parcelamentos vinculados a `cardId`
 
-## Savings
+## Savings (UI oculta)
 
+- Módulo em `Savings.tsx`; fora da sidebar enquanto `FEATURE_SAVINGS === false`
 - Cards por reserva; tipos com labels pt-BR
 - `updateAmount` abre fluxo de novo valor + histórico
 - Gráfico pizza CSS por tipo
@@ -79,7 +80,7 @@
 | `.btn`, `.btn-primary`, `.btn-danger`, `.btn-sm` | ações |
 | `.form-group`, `.form-label`, `.form-input`, `.form-select` | formulários |
 | `.stat-card`, `.stat-value`, `.stat-label` | métricas dashboard |
-| `.chart-bar`, `.chart-pie` | gráficos CSS puros |
+| `.line-chart`, `.chart-pie` | gráficos SVG/CSS puros |
 | `.credit-card-visual` | cartão estilizado |
 | `.agent-chat-container`, `.agent-bubble` | chat |
 | `.loading`, `.error-message` | estados |
