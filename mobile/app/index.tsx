@@ -1,7 +1,8 @@
 import { Redirect } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { Theme } from '@/constants/Colors';
 import { useAuth } from '@/src/context/AuthContext';
+import LoadingLogo from '@/src/components/LoadingLogo';
 
 export default function Index() {
   const { session, loading } = useAuth();
@@ -9,7 +10,7 @@ export default function Index() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: Theme.bgPrimary, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={Theme.accentPrimary} />
+        <LoadingLogo size={76} />
       </View>
     );
   }

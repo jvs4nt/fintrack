@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Redirect } from 'expo-router';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,6 +19,8 @@ import { useAuth } from '@/src/context/AuthContext';
 import { isSupabaseConfigured } from '@/src/lib/supabase';
 
 type LoginMode = 'signin' | 'signup' | 'magic';
+
+const logoSource = require('../../assets/images/fintrack-logo.png');
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -64,9 +67,12 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
-          <Text style={styles.logo}>
-            Fin<Text style={styles.logoSuffix}>Track</Text>
-          </Text>
+          <View style={styles.logoRow}>
+            <Image source={logoSource} style={styles.logoImage} accessibilityLabel="FinTrack" />
+            <Text style={styles.logoText}>
+              Fin<Text style={styles.logoSuffix}>Track</Text>
+            </Text>
+          </View>
           <Text style={styles.title}>Entrar</Text>
           <Text style={styles.subtitle}>Sincronize seus dados entre dispositivos com sua conta.</Text>
 
@@ -171,12 +177,22 @@ const styles = StyleSheet.create({
     borderColor: Theme.border,
     padding: Theme.spacingLg,
   },
-  logo: {
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Theme.spacingLg,
+  },
+  logoImage: {
+    width: 36,
+    height: 36,
+    marginRight: Theme.spacingSm,
+    resizeMode: 'contain',
+  },
+  logoText: {
     fontFamily: FontFamily.displayBold,
     fontSize: 28,
     letterSpacing: -1,
     color: Theme.accentPrimary,
-    marginBottom: Theme.spacingLg,
   },
   logoSuffix: {
     fontFamily: FontFamily.displayBold,

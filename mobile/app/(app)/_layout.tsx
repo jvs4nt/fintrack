@@ -3,10 +3,11 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Tabs, Redirect } from 'expo-router';
 import type { ComponentProps } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 import { useAuth } from '@/src/context/AuthContext';
+import LoadingLogo from '@/src/components/LoadingLogo';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
 
@@ -36,7 +37,7 @@ export default function AppLayout() {
           alignItems: 'center',
           backgroundColor: Theme.bgPrimary,
         }}>
-        <ActivityIndicator size="large" color={Theme.accentPrimary} />
+        <LoadingLogo size={76} />
       </View>
     );
   }

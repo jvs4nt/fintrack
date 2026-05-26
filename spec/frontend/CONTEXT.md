@@ -108,7 +108,9 @@ npm run dev      # :5173
 npm run build    # dist/
 ```
 
-Env: `frontend/.env.example` → `VITE_API_BASE_URL`.
+Env: copie `frontend/.env.example` → `frontend/.env`. Para testar no **celular** (mesma Wi‑Fi): use o **IP da máquina** em `VITE_API_BASE_URL` (ex. `http://192.168.1.10:3333/api`), rode o Vite com `npm run dev -- --host` e no `backend/.env` inclua a mesma origem em `CORS_ORIGIN` (várias URLs separadas por vírgula — ver `backend/.env.example`).
+
+**Mobile (≤768px):** `App.css` — `main-content` sem overflow horizontal indesejado; valores e textos com quebra; gráfico de barras do Dashboard mais compacto; cabeçalhos `.flex-between` empilhados; listas de Meses com `.entry-amount-row`; modais `form-row` em uma coluna; tabelas largas só rolam dentro de `.table-container`.
 
 ## Extensão
 

@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi';
 import { useToast } from '../components/ToastProvider';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Saving } from '../types';
+import LoadingLogo from '../components/LoadingLogo';
 
 // Tipos de investimento com cores
 const savingTypes: Record<string, { label: string; color: string }> = {
@@ -158,7 +159,7 @@ function Savings() {
       </div>
 
       {loading ? (
-        <div className="loading">Carregando...</div>
+        <LoadingLogo />
       ) : (
         <>
           {/* Grid de Reservas */}

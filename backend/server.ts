@@ -20,9 +20,21 @@ import 'dotenv/config';
 const app = express();
 const PORT = process.env.PORT || 3333;
 
+/** Várias origens em dev (ex.: localhost + IP da LAN com `vite --host`). */
+function parseCorsOrigins(): string | string[] {
+  const raw = process.env.CORS_ORIGIN || 'http://localhost:5173';
+  const list = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (list.length === 0) return 'http://localhost:5173';
+  if (list.length === 1) return list[0];
+  return list;
+}
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: parseCorsOrigins(),
     credentials: true,
   })
 );

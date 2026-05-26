@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi';
 import { useToast } from '../components/ToastProvider';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Card, Installment } from '../types';
+import LoadingLogo from '../components/LoadingLogo';
 
 function Cards() {
   const api = useApi();
@@ -231,7 +232,7 @@ function Cards() {
       </header>
 
       {loading ? (
-        <div className="loading">Carregando...</div>
+        <LoadingLogo />
       ) : (
         <>
           {/* Grid de Cartões */}

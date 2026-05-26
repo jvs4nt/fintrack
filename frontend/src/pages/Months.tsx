@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi';
 import { useToast } from '../components/ToastProvider';
 import { useConfirm } from '../components/ConfirmDialog';
 import { BudgetItem, Category, InstallmentMonthView, MonthEntry } from '../types';
+import LoadingLogo from '../components/LoadingLogo';
 
 // Meses do ano
 const months = [
@@ -254,6 +255,22 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
           </label>
         </div>
 
+        <div className="month-selector">
+          <label>
+            Mês:
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            >
+              {months.map((month) => (
+                <option key={month.id} value={month.id}>
+                  {month.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
         <div className="tabs-list">
           {months.map((month) => (
             <button
@@ -268,7 +285,7 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
       </div>
 
       {loading ? (
-        <div className="loading">Carregando...</div>
+        <LoadingLogo />
       ) : (
         <>
           {/* Ganhos */}
@@ -291,7 +308,7 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
                         {entry.isFixed && ' • (Fixo)'}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div className="entry-amount-row">
                       <span className="entry-amount income">
                         + {formatCurrency(entry.amount)}
                       </span>
@@ -331,7 +348,7 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
                         {entry.isFixed && ' • (Fixo)'}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div className="entry-amount-row">
                       <span className="entry-amount expense">
                         - {formatCurrency(entry.amount)}
                       </span>

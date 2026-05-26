@@ -63,7 +63,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 Centralizado em `services/syncFixed.ts`:
 
-- `syncFixedForMonth(userId, year, month, { mode })` — `create-only` ou `upsert`
+- `syncFixedForMonth(userId, year, month, { mode })` — `create-only` ou `upsert`; remove `MonthEntry` duplicados (mesmo `type` + `fixedRefId` no mês) antes de criar/atualizar
 - **Não cria** entry se existir `FixedMonthSkip` para aquele fixo/mês
 - `recordFixedMonthSkip` — chamado ao excluir lançamento fixo em Meses/agente
 - `clearFixedMonthSkips` — ao excluir fixo pai

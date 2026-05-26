@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi';
 import { useToast } from '../components/ToastProvider';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Category, FixedIncome, FixedExpense } from '../types';
+import LoadingLogo from '../components/LoadingLogo';
 
 interface FixedProps {
   selectedYear: number;
@@ -235,7 +236,7 @@ function Fixed({ selectedYear, selectedMonth }: FixedProps) {
       </div>
 
       {loading ? (
-        <div className="loading">Carregando...</div>
+        <LoadingLogo />
       ) : (
         <>
           {/* Ganhos Fixos */}

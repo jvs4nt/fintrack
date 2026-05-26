@@ -6,6 +6,8 @@ import { useAuth } from './context/AuthContext';
 
 // Importar páginas
 import Login from './pages/Login';
+import LoadingLogo from './components/LoadingLogo';
+import logo from './assets/fintrack-logo.png';
 import Dashboard from './pages/Dashboard';
 import Months from './pages/Months';
 import Fixed from './pages/Fixed';
@@ -34,6 +36,7 @@ function App() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [isAgentModalClosing, setIsAgentModalClosing] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const openAgentModal = () => {
     setIsAgentModalClosing(false);
@@ -46,6 +49,14 @@ function App() {
       setIsAgentModalOpen(false);
       setIsAgentModalClosing(false);
     }, 220);
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen((prev) => !prev);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
   };
 
   useEffect(() => {
@@ -201,19 +212,20 @@ function App() {
     }
   };
 
-  if (authLoading) return <div className="loading">Carregando...</div>;
+  if (authLoading) return <LoadingLogo />;
   if (!session) return <Login />;
-  if (isInitializing) return <div className="loading">Iniciando FinTrack...</div>;
+  if (isInitializing) return <LoadingLogo />;
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${isMobileMenuOpen ? 'menu-open' : ''}`}>
       {/* Sidebar de Navegação */}
       <aside className="sidebar">
         <div className="logo">
+          <img className="logo-image" src={logo} alt="FinTrack" />
           Fin<span>Track</span>
         </div>
 
-        <nav>
+        <nav id="sidebar-navigation">
           <ul className="nav-menu">
             {navigation.map((item) => (
               <li key={item.id} className="nav-item">
@@ -222,9 +234,11 @@ function App() {
                   onClick={() => {
                     if (item.id === 'agent') {
                       openAgentModal();
+                      closeMobileMenu();
                       return;
                     }
                     setCurrentPage(item.id);
+                    closeMobileMenu();
                   }}
                 >
                   <span className="nav-icon">{item.icon}</span>
@@ -236,8 +250,25 @@ function App() {
         </nav>
       </aside>
 
+      <div
+        className={`mobile-menu-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+        onClick={closeMobileMenu}
+        aria-hidden
+      />
+
       {/* Conteúdo Principal */}
       <main className="main-content">
+        <div className="mobile-topbar">
+          <button
+            className="mobile-menu-button"
+            onClick={toggleMobileMenu}
+            aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="sidebar-navigation"
+          >
+            ☰
+          </button>
+        </div>
         {renderPage()}
       </main>
 
@@ -246,6 +277,8 @@ function App() {
         onClick={openAgentModal}
         title="Abrir Agente IA"
         aria-label="Abrir Agente IA"
+        aria-hidden
+        style={{ display: 'none' }}
       >
         🤖
       </button>

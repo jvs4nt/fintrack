@@ -30,7 +30,7 @@ Todas as entidades de negócio têm **`userId`** (UUID Supabase Auth), exceto `S
 | isFixed | Boolean | default false |
 | fixedRefId | Int? | ID do fixo origem |
 
-Índice lógico de sync: `(userId, year, month, type, fixedRefId)`.
+Índice lógico de sync: `(userId, year, month, type, fixedRefId)` — no máximo um lançamento por fixo/mês; o sync apaga duplicatas retornando o registro de **menor `id`**.
 
 ### FixedMonthSkip
 

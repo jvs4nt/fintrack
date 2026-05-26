@@ -20,27 +20,6 @@ function buildFixedDate(year: number, month: number, dayOfMonth: number): string
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-async function isFixedSkipped(
-  userId: string,
-  year: number,
-  month: number,
-  type: string,
-  fixedRefId: number
-): Promise<boolean> {
-  const skip = await prisma.fixedMonthSkip.findUnique({
-    where: {
-      userId_year_month_type_fixedRefId: {
-        userId,
-        year,
-        month,
-        type,
-        fixedRefId,
-      },
-    },
-  });
-  return skip !== null;
-}
-
 export async function syncFixedForMonth(
   userId: string,
   year: number,
@@ -48,102 +27,110 @@ export async function syncFixedForMonth(
   options: { mode?: SyncMode } = {}
 ): Promise<{ created: number; updated: number }> {
   const mode = options.mode ?? 'create-only';
-  let created = 0;
-  let updated = 0;
+  const [fixedIncomes, fixedExpenses, existingEntries, skips] = await Promise.all([
+    prisma.fixedIncome.findMany({ where: { userId, active: true } }),
+    prisma.fixedExpense.findMany({ where: { userId, active: true } }),
+    prisma.monthEntry.findMany({
+      where: {
+        userId,
+        year,
+        month,
+        isFixed: true,
+        fixedRefId: { not: null },
+      },
+      select: { id: true, type: true, fixedRefId: true },
+    }),
+    prisma.fixedMonthSkip.findMany({
+      where: { userId, year, month },
+      select: { type: true, fixedRefId: true },
+    }),
+  ]);
 
-  const fixedIncomes = await prisma.fixedIncome.findMany({
-    where: { userId, active: true },
-  });
-  const fixedExpenses = await prisma.fixedExpense.findMany({
-    where: { userId, active: true },
-  });
+  /** Mesmo fixo não pode ter dois MonthEntry no mês; duplicatas antigas (race/sync legado) são removidas. */
+  const keyToEntryIds = new Map<string, number[]>();
+  for (const entry of existingEntries) {
+    if (entry.fixedRefId == null) continue;
+    const key = `${entry.type}:${entry.fixedRefId}`;
+    const bucket = keyToEntryIds.get(key) ?? [];
+    bucket.push(entry.id);
+    keyToEntryIds.set(key, bucket);
+  }
 
-  for (const income of fixedIncomes) {
-    const result = await upsertFixedEntry({
-      userId,
-      year,
-      month,
-      type: 'income',
-      fixedRefId: income.id,
-      description: income.name,
-      amount: income.amount,
-      category: income.category,
-      dayOfMonth: income.dayOfMonth,
-      mode,
+  const idsToDelete: number[] = [];
+  for (const ids of keyToEntryIds.values()) {
+    if (ids.length <= 1) continue;
+    const sorted = [...ids].sort((a, b) => a - b);
+    idsToDelete.push(...sorted.slice(1));
+  }
+
+  if (idsToDelete.length > 0) {
+    await prisma.monthEntry.deleteMany({
+      where: { userId, id: { in: idsToDelete } },
     });
-    created += result.created;
-    updated += result.updated;
   }
 
-  for (const expense of fixedExpenses) {
-    const result = await upsertFixedEntry({
-      userId,
-      year,
-      month,
-      type: 'expense',
-      fixedRefId: expense.id,
-      description: expense.name,
-      amount: expense.amount,
-      category: expense.category,
-      paymentMethod: expense.paymentMethod,
-      dayOfMonth: expense.dayOfMonth,
-      mode,
-    });
-    created += result.created;
-    updated += result.updated;
+  const deletedSet = new Set(idsToDelete);
+  const existingByKey = new Map<string, { id: number }>();
+  for (const entry of existingEntries) {
+    if (entry.fixedRefId == null) continue;
+    if (deletedSet.has(entry.id)) continue;
+    existingByKey.set(`${entry.type}:${entry.fixedRefId}`, { id: entry.id });
   }
 
-  return { created, updated };
-}
-
-async function upsertFixedEntry(params: {
-  userId: string;
-  year: number;
-  month: number;
-  type: 'income' | 'expense';
-  fixedRefId: number;
-  description: string;
-  amount: number;
-  category: string;
-  dayOfMonth: number;
-  paymentMethod?: string;
-  mode: SyncMode;
-}): Promise<{ created: number; updated: number }> {
-  if (!Number.isFinite(params.amount)) {
-    throw new Error(
-      `Valor (amount) inválido no fixo ${params.type} id=${params.fixedRefId}. Edite o cadastro do fixo.`
-    );
-  }
-
-  const skipped = await isFixedSkipped(
-    params.userId,
-    params.year,
-    params.month,
-    params.type,
-    params.fixedRefId
+  const skipKeys = new Set<string>(
+    skips.map((skip) => `${skip.type}:${skip.fixedRefId}`)
   );
-  if (skipped) {
-    return { created: 0, updated: 0 };
-  }
 
-  const existing = await prisma.monthEntry.findFirst({
-    where: {
-      userId: params.userId,
-      year: params.year,
-      month: params.month,
-      type: params.type,
-      fixedRefId: params.fixedRefId,
-    },
-  });
+  const creates: Array<{
+    userId: string;
+    year: number;
+    month: number;
+    type: 'income' | 'expense';
+    description: string;
+    amount: number;
+    date: string;
+    category: string;
+    paymentMethod?: string;
+    isFixed: true;
+    fixedRefId: number;
+  }> = [];
+  const updates: Array<{
+    id: number;
+    data: {
+      description: string;
+      amount: number;
+      date: string;
+      category: string;
+      paymentMethod?: string;
+    };
+  }> = [];
 
-  const date = buildFixedDate(params.year, params.month, params.dayOfMonth);
+  const enqueueFixed = (params: {
+    type: 'income' | 'expense';
+    fixedRefId: number;
+    description: string;
+    amount: number;
+    category: string;
+    dayOfMonth: number;
+    paymentMethod?: string;
+  }) => {
+    if (!Number.isFinite(params.amount)) {
+      throw new Error(
+        `Valor (amount) inválido no fixo ${params.type} id=${params.fixedRefId}. Edite o cadastro do fixo.`
+      );
+    }
 
-  if (!existing) {
-    await prisma.monthEntry.create({
-      data: {
-        userId: params.userId,
-        year: params.year,
-        month: params.month,
+    const key = `${params.type}:${params.fixedRefId}`;
+    if (skipKeys.has(key)) return;
+
+    const date = buildFixedDate(year, month, params.dayOfMonth);
+    const existing = existingByKey.get(key);
+
+    if (!existing) {
+      creates.push({
+        userId,
+        year,
+        month,
         type: params.type,
         description: params.description,
         amount: params.amount,
@@ -152,26 +139,68 @@ async function upsertFixedEntry(params: {
         paymentMethod: params.paymentMethod,
         isFixed: true,
         fixedRefId: params.fixedRefId,
-      },
+      });
+      return;
+    }
+
+    if (mode === 'upsert') {
+      updates.push({
+        id: existing.id,
+        data: {
+          description: params.description,
+          amount: params.amount,
+          date,
+          category: params.category,
+          paymentMethod: params.paymentMethod,
+        },
+      });
+    }
+  };
+
+  for (const income of fixedIncomes) {
+    enqueueFixed({
+      type: 'income',
+      fixedRefId: income.id,
+      description: income.name,
+      amount: income.amount,
+      category: income.category,
+      dayOfMonth: income.dayOfMonth,
     });
-    return { created: 1, updated: 0 };
   }
 
-  if (params.mode === 'upsert') {
-    await prisma.monthEntry.update({
-      where: { id: existing.id },
-      data: {
-        description: params.description,
-        amount: params.amount,
-        date,
-        category: params.category,
-        paymentMethod: params.paymentMethod,
-      },
+  for (const expense of fixedExpenses) {
+    enqueueFixed({
+      type: 'expense',
+      fixedRefId: expense.id,
+      description: expense.name,
+      amount: expense.amount,
+      category: expense.category,
+      paymentMethod: expense.paymentMethod,
+      dayOfMonth: expense.dayOfMonth,
     });
-    return { created: 0, updated: 1 };
   }
 
-  return { created: 0, updated: 0 };
+  let created = 0;
+  let updated = 0;
+
+  if (creates.length > 0) {
+    const result = await prisma.monthEntry.createMany({ data: creates });
+    created = result.count;
+  }
+
+  if (mode === 'upsert' && updates.length > 0) {
+    await Promise.all(
+      updates.map((update) =>
+        prisma.monthEntry.update({
+          where: { id: update.id },
+          data: update.data,
+        })
+      )
+    );
+    updated = updates.length;
+  }
+
+  return { created, updated };
 }
 
 export async function recordFixedMonthSkip(

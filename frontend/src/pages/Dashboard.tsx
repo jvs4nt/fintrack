@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { DashboardSummary } from '../types';
+import LoadingLogo from '../components/LoadingLogo';
 
 interface DashboardProps {
   selectedYear: number;
@@ -45,7 +46,7 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">Visão geral do mês</p>
         </header>
-        <div className="loading">Carregando...</div>
+        <LoadingLogo />
       </div>
     );
   }
@@ -88,15 +89,13 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
       >
         <div className="stat-label">Saldo Líquido do Mês (c/ Parcelas)</div>
         <div
-          className="stat-value"
-          style={{
-            color: summary.netBalance >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)',
-            fontSize: '2.5rem',
-          }}
+          className={`stat-value dashboard-net-value ${
+            summary.netBalance >= 0 ? 'positive' : 'negative'
+          }`}
         >
           {formatCurrency(summary.netBalance)}
         </div>
-        <div className="stat-subvalue">
+        <div className="stat-subvalue dashboard-summary-line">
           Ganhos: {formatCurrency(summary.totalIncome)} | Gastos:{' '}
           {formatCurrency(summary.totalExpense)} | Parcelas:{' '}
           {formatCurrency(summary.totalInstallments)}

@@ -59,7 +59,7 @@ Igual a incomes + **`paymentMethod`** obrigatório no POST + `POST /:id/propagat
 | Método | Rota | Body / Notas |
 |--------|------|----------------|
 | GET | `/:year/:month` | `MonthEntry[]` ordenado por date |
-| POST | `/:year/:month/sync-fixed` | `{ mode?: 'create-only' \| 'upsert' }` → `{ message, created, updated }` — 400 se ano/mês inválidos; 500 `{ error }` e, fora de `production`, `{ details }` (mensagem interna para depuração) |
+| POST | `/:year/:month/sync-fixed` | `{ mode?: 'create-only' \| 'upsert' }` → `{ message, created, updated }` — normaliza duplicatas de fixo no mês (mesmo `type` + `fixedRefId`, mantém o menor `id`); 400 se ano/mês inválidos; 500 `{ error }` e, fora de `production`, `{ details }` (mensagem interna para depuração) |
 | POST | `/entry` | `{ year, month, type, description, amount, date, category, paymentMethod?, note?, isFixed? }` |
 | PUT | `/entry/:id` | campos parciais; coerção year/month/amount |
 | DELETE | `/entry/:id` | 204 — se `isFixed`, grava `FixedMonthSkip` para o sync não recriar |

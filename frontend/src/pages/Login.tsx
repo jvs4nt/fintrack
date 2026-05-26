@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import logo from '../assets/fintrack-logo.png';
 
 type LoginMode = 'signin' | 'signup' | 'magic';
 
@@ -50,6 +51,7 @@ function Login() {
     <div className="login-page">
       <div className="login-card card">
         <div className="logo" style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <img className="logo-image" src={logo} alt="FinTrack" />
           Fin<span>Track</span>
         </div>
         <h1 className="page-title" style={{ fontSize: '1.5rem' }}>
@@ -91,13 +93,15 @@ function Login() {
           {message && <p className="login-feedback login-feedback-success">{message}</p>}
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
-            {loading
-              ? 'Aguarde...'
-              : mode === 'magic'
-                ? 'Enviar link mágico'
-                : mode === 'signup'
-                  ? 'Criar conta'
-                  : 'Entrar'}
+            {loading ? (
+              <img className="loading-logo loading-logo-sm" src={logo} alt="Carregando" />
+            ) : mode === 'magic' ? (
+              'Enviar link mágico'
+            ) : mode === 'signup' ? (
+              'Criar conta'
+            ) : (
+              'Entrar'
+            )}
           </button>
         </form>
 
