@@ -18,9 +18,19 @@ import {
 } from '../types';
 import { supabase } from '../lib/supabase';
 
-const API_BASE = import.meta.env.DEV
-  ? '/api'
-  : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333/api');
+/** Dev: `/api` → proxy Vite → backend local. Se `VITE_API_BASE_URL` for http(s) absoluto, usa direto (ex.: Render). */
+function resolveApiBase(): string {
+  const fromEnv = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+  if (fromEnv && /^https?:\/\//.test(fromEnv)) {
+    return fromEnv;
+  }
+  if (import.meta.env.DEV) {
+    return '/api';
+  }
+  return fromEnv || 'http://localhost:3333/api';
+}
+
+const API_BASE = resolveApiBase();
 
 function syncQuery(sync?: boolean): string {
   if (sync === false) return '?sync=0';
