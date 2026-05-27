@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
+import { useToast } from '../components/ToastProvider';
+import { useConfirm } from '../components/ConfirmDialog';
 import { Card, Installment } from '../types';
+import LoadingLogo from '../components/LoadingLogo';
 
-// Página de Cartões de Crédito e Parcelamentos
 function Cards() {
   const api = useApi();
+  const toast = useToast();
+  const { confirm } = useConfirm();
   const [loading, setLoading] = useState<boolean>(true);
   const [cards, setCards] = useState<Card[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
@@ -107,19 +111,26 @@ function Cards() {
       setShowCardModal(false);
       loadCardsData();
     } catch (err: any) {
-      alert('Erro ao salvar: ' + err.message);
+      toast.error('Erro ao salvar: ' + err.message);
     }
   };
 
   // Excluir cartão
   const handleDeleteCard = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir este cartão?')) {
-      try {
-        await api.cards.delete(id);
-        loadCardsData();
-      } catch (err: any) {
-        alert('Erro ao excluir: ' + err.message);
-      }
+    const ok = await confirm({
+      title: 'Excluir cartão',
+      message: 'Tem certeza que deseja excluir este cartão?',
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (!ok) return;
+
+    try {
+      await api.cards.delete(id);
+      loadCardsData();
+      toast.success('Cartão excluído.');
+    } catch (err: any) {
+      toast.error('Erro ao excluir: ' + err.message);
     }
   };
 
@@ -169,19 +180,26 @@ function Cards() {
       setShowInstallmentModal(false);
       loadCardsData();
     } catch (err: any) {
-      alert('Erro ao salvar: ' + err.message);
+      toast.error('Erro ao salvar: ' + err.message);
     }
   };
 
   // Excluir parcelamento
   const handleDeleteInstallment = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir este parcelamento?')) {
-      try {
-        await api.installments.delete(id);
-        loadCardsData();
-      } catch (err: any) {
-        alert('Erro ao excluir: ' + err.message);
-      }
+    const ok = await confirm({
+      title: 'Excluir parcelamento',
+      message: 'Tem certeza que deseja excluir este parcelamento?',
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (!ok) return;
+
+    try {
+      await api.installments.delete(id);
+      loadCardsData();
+      toast.success('Parcelamento excluído.');
+    } catch (err: any) {
+      toast.error('Erro ao excluir: ' + err.message);
     }
   };
 
@@ -214,7 +232,7 @@ function Cards() {
       </header>
 
       {loading ? (
-        <div className="loading">Carregando...</div>
+        <LoadingLogo />
       ) : (
         <>
           {/* Grid de Cartões */}

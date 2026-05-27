@@ -8,29 +8,31 @@
 | months | `Months.tsx` | `months.*`, `installments.getByMonth` |
 | fixed | `Fixed.tsx` | `fixedIncomes.*`, `fixedExpenses.*` |
 | cards | `Cards.tsx` | `cards.*`, `installments.*` |
-| savings | `Savings.tsx` | `savings.*` |
+| savings | `Savings.tsx` | `savings.*` — **oculto** na UI (`FEATURE_SAVINGS = false`) |
 | settings | inline em `App.tsx` | `settings.get`, `settings.update` |
 | agent | modal + `Agent.tsx` | `agent.chat` |
 
 ## Dashboard
 
 - Props: `selectedYear`, `selectedMonth` (do App — **não** tem seletor próprio de mês)
-- Exibe: saldo (`summary.balance`), cards ganhos/gastos/saldo, alerta `nextDueCard`, gráfico barras CSS (`sixMonthsData`), últimos 5 `lastEntries`
-- Pode usar `as any` no destructuring — tipar ao refatorar
+- Card destaque: `summary.netBalance` (ganhos − gastos − parcelas)
+- Tabela **Parcelas do mês** (`monthInstallments`)
+- Cards ganhos/gastos/saldo, `nextDueCard`, gráfico de linhas 6 meses (ganhos verde / gastos vermelho), últimos 5 `lastEntries`
 
 ## Months
 
 - Seletor de mês (tabs Jan–Dez) e ano (`years`: atual ±5)
-- Ao mudar mês: `getEntries` + `syncFixed` (ou equivalente no load) + `installments.getByMonth`
-- Seções: Ganhos | Gastos | Parcelas | Resumo
-- Modal CRUD avulso: `months.createEntry` / `updateEntry` / `deleteEntry`
-- Entradas fixas: `isFixed` — cuidado ao editar (não altera template fixo)
+- Ao mudar mês: `syncFixed` + `getEntries` + … (sync respeita `FixedMonthSkip`)
+- **Excluir lançamento (Fixo):** some e não volta após reload — backend grava skip no DELETE
+- Botão **Sincronizar fixos** → `syncFixed(..., 'upsert')`
+- Seções: Ganhos | Gastos | Parcelas | **Metas do mês** | Resumo
+- Categorias: [`CategoryPicker.tsx`](../frontend/src/components/CategoryPicker.tsx) — combobox customizado (sem `<select>` nativo); **+** adiciona nome à lista local; `POST /categories` só no **Salvar** do lançamento (`ensureCategory`)
+- Metas: limites por categoria de despesa, barras 80%/100%
 
 ## Fixed
 
-- Duas colunas/listas: ganhos e gastos fixos
-- Toggle `active` via update
-- Aviso UX: alterar fixo não retroage em `MonthEntry` já criados no sync
+- Props: `selectedYear`, `selectedMonth` (mês de planejamento para propagate)
+- Categorias: combobox no modal; após editar fixo, diálogo `choose()` para propagar lançamentos
 
 ## Cards
 
@@ -39,8 +41,9 @@
 - Barra de limite usado (soma parcelas ativas / limit)
 - CRUD parcelamentos vinculados a `cardId`
 
-## Savings
+## Savings (UI oculta)
 
+- Módulo em `Savings.tsx`; fora da sidebar enquanto `FEATURE_SAVINGS === false`
 - Cards por reserva; tipos com labels pt-BR
 - `updateAmount` abre fluxo de novo valor + histórico
 - Gráfico pizza CSS por tipo
@@ -57,6 +60,12 @@
 ## Settings (App.tsx)
 
 - Input número 1–31 para `payday`
+- Seção **Conta** com e-mail logado e botão **Sair**
+
+## Login
+
+- Tela full-page antes do app (`Login.tsx`)
+- Modos: entrar, criar conta, link mágico por e-mail
 - Salvar recalcula `selectedYear/Month` e `alert` de sucesso
 
 ## Classes CSS frequentes
@@ -71,7 +80,7 @@
 | `.btn`, `.btn-primary`, `.btn-danger`, `.btn-sm` | ações |
 | `.form-group`, `.form-label`, `.form-input`, `.form-select` | formulários |
 | `.stat-card`, `.stat-value`, `.stat-label` | métricas dashboard |
-| `.chart-bar`, `.chart-pie` | gráficos CSS puros |
+| `.line-chart`, `.chart-pie` | gráficos SVG/CSS puros |
 | `.credit-card-visual` | cartão estilizado |
 | `.agent-chat-container`, `.agent-bubble` | chat |
 | `.loading`, `.error-message` | estados |

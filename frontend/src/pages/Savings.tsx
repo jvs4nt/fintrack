@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
+import { useToast } from '../components/ToastProvider';
+import { useConfirm } from '../components/ConfirmDialog';
 import { Saving } from '../types';
+import LoadingLogo from '../components/LoadingLogo';
 
 // Tipos de investimento com cores
 const savingTypes: Record<string, { label: string; color: string }> = {
@@ -16,6 +19,8 @@ const savingTypes: Record<string, { label: string; color: string }> = {
 // Página de Reservas e Investimentos
 function Savings() {
   const api = useApi();
+  const toast = useToast();
+  const { confirm } = useConfirm();
   const [loading, setLoading] = useState<boolean>(true);
   const [savings, setSavings] = useState<Saving[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -68,7 +73,7 @@ function Savings() {
       setShowModal(false);
       loadSavingsData();
     } catch (err: any) {
-      alert('Erro ao salvar: ' + err.message);
+      toast.error('Erro ao salvar: ' + err.message);
     }
   };
 
@@ -87,19 +92,26 @@ function Savings() {
       setShowUpdateModal(false);
       loadSavingsData();
     } catch (err: any) {
-      alert('Erro ao atualizar: ' + err.message);
+      toast.error('Erro ao atualizar: ' + err.message);
     }
   };
 
   // Excluir reserva
   const handleDelete = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir esta reserva?')) {
-      try {
-        await api.savings.delete(id);
-        loadSavingsData();
-      } catch (err: any) {
-        alert('Erro ao excluir: ' + err.message);
-      }
+    const ok = await confirm({
+      title: 'Excluir reserva',
+      message: 'Tem certeza que deseja excluir esta reserva?',
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (!ok) return;
+
+    try {
+      await api.savings.delete(id);
+      loadSavingsData();
+      toast.success('Reserva excluída.');
+    } catch (err: any) {
+      toast.error('Erro ao excluir: ' + err.message);
     }
   };
 
@@ -147,7 +159,7 @@ function Savings() {
       </div>
 
       {loading ? (
-        <div className="loading">Carregando...</div>
+        <LoadingLogo />
       ) : (
         <>
           {/* Grid de Reservas */}

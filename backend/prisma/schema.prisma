@@ -1,29 +1,31 @@
-// FinTrack - Schema Prisma
-// Banco de dados SQLite para organizador financeiro pessoal
+// FinTrack - Schema Prisma (PostgreSQL / Supabase)
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./fintrack.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
-// Ganhos Fixos - Receitas recorrentes mensais
 model FixedIncome {
   id          Int      @id @default(autoincrement())
+  userId      String
   name        String
   amount      Float
   dayOfMonth  Int
   category    String
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
+
+  @@index([userId])
 }
 
-// Gastos Fixos - Despesas recorrentes mensais
 model FixedExpense {
   id             Int      @id @default(autoincrement())
+  userId         String
   name           String
   amount         Float
   dayOfMonth     Int
@@ -31,14 +33,16 @@ model FixedExpense {
   paymentMethod  String
   active         Boolean  @default(true)
   createdAt      DateTime @default(now())
+
+  @@index([userId])
 }
 
-// Lançamentos Mensais - Entradas e saídas do mês
 model MonthEntry {
   id            Int      @id @default(autoincrement())
+  userId        String
   year          Int
-  month         Int      // 1-12
-  type          String   // "income" | "expense"
+  month         Int
+  type          String
   description   String
   amount        Float
   date          String
@@ -48,11 +52,25 @@ model MonthEntry {
   isFixed       Boolean  @default(false)
   fixedRefId    Int?
   createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, year, month])
 }
 
-// Cartões de Crédito
+model FixedMonthSkip {
+  id          Int    @id @default(autoincrement())
+  userId      String
+  year        Int
+  month       Int
+  type        String
+  fixedRefId  Int
+
+  @@unique([userId, year, month, type, fixedRefId])
+}
+
 model Card {
   id             Int            @id @default(autoincrement())
+  userId         String
   name           String
   lastFourDigits String?
   color          String
@@ -61,46 +79,69 @@ model Card {
   limit          Float
   createdAt      DateTime       @default(now())
   installments   Installment[]
+
+  @@index([userId])
 }
 
-// Parcelas de Cartão de Crédito
 model Installment {
-  id               Int      @id @default(autoincrement())
-  description      String
-  totalAmount      Float
-  totalInstallments Int
-  currentInstallment Int    @default(1)
-  firstPaymentDate String
-  cardId           Int
-  card             Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  status           String   @default("active") // "active" | "paid"
-  createdAt        DateTime @default(now())
+  id                 Int      @id @default(autoincrement())
+  description        String
+  totalAmount        Float
+  totalInstallments  Int
+  currentInstallment Int      @default(1)
+  firstPaymentDate   String
+  cardId             Int
+  card               Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  status             String   @default("active")
+  createdAt          DateTime @default(now())
 }
 
-// Reservas Financeiras / Investimentos
 model Saving {
-  id          Int            @id @default(autoincrement())
+  id          Int             @id @default(autoincrement())
+  userId      String
   name        String
   institution String
-  type        String   // "poupanca" | "cdb" | "tesouro" | "acoes" | "fiis" | "cripto" | "outros"
+  type        String
   amount      Float
-  updatedAt   DateTime @updatedAt
-  createdAt   DateTime @default(now())
+  updatedAt   DateTime        @updatedAt
+  createdAt   DateTime        @default(now())
   history     SavingHistory[]
+
+  @@index([userId])
 }
 
-// Histórico de Atualizações de Reservas
 model SavingHistory {
-  id        Int      @id @default(autoincrement())
-  savingId  Int
-  saving    Saving   @relation(fields: [savingId], references: [id], onDelete: Cascade)
-  amount    Float
-  date      DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  savingId Int
+  saving   Saving   @relation(fields: [savingId], references: [id], onDelete: Cascade)
+  amount   Float
+  date     DateTime @default(now())
 }
 
-// Configurações Globais
+model Category {
+  id     Int    @id @default(autoincrement())
+  userId String
+  name   String
+  type   String
+
+  @@unique([userId, name, type])
+  @@index([userId])
+}
+
+model MonthlyBudget {
+  id          Int   @id @default(autoincrement())
+  userId      String
+  year        Int
+  month       Int
+  category    String
+  limitAmount Float
+
+  @@unique([userId, year, month, category])
+  @@index([userId])
+}
+
 model Settings {
-  id        Int      @id
-  payday    Int      @default(1) // Dia do mês em que o usuário recebe/planejamento vira
+  userId    String   @id
+  payday    Int      @default(1)
   updatedAt DateTime @updatedAt
 }

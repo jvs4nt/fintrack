@@ -26,8 +26,9 @@ O FinTrack já cobre bem o **ciclo mensal de planejamento**: fixos → lançamen
 | Parcelas vs fatura | `closingDay`/`dueDay` existem, mas limite usado e mês não seguem ciclo de fatura BR | Cartão pouco confiável para decisão |
 | Dashboard | API expõe `netBalance` e parcelas; tipos/UI podem não refletir tudo | Visão incompleta do “quanto sobra de verdade” |
 | Agente | Rule-based, sem LLM | Bom offline/barato; frágil em frases complexas |
-| UX | `alert`/`confirm` em várias páginas | Ruim em mobile e pouco polido |
-| Dados | SQLite local, sem auth, sem sync | Celular ≠ mesmo dado do PC |
+| UX | `alert`/`confirm` em várias páginas | ✅ Toast + Confirm (Fase 1.7) |
+| Dados | SQLite local, sem auth, sem sync | ✅ Supabase Postgres + Auth (Fase 2.1–2.2) |
+| Exclusão em Meses | Sync recriava fixos após delete | ✅ `FixedMonthSkip` + skip no sync |
 | Código | Lógica de sync duplicada (`months` + `dashboard`) | Risco de bugs ao evoluir |
 
 ### Lacunas do modelo de dados
@@ -45,15 +46,16 @@ O FinTrack já cobre bem o **ciclo mensal de planejamento**: fixos → lançamen
 **Objetivo:** confiar nos números sem reescrever o app.  
 **Horizonte sugerido:** 1–3 semanas.
 
-| # | Item | Descrição |
-|---|------|-----------|
-| 1.1 | Sync inteligente de fixos | Ao alterar `FixedIncome`/`FixedExpense`, permitir atualizar lançamentos futuros ou a partir de um mês |
-| 1.2 | Saldo “real” no dashboard | Destacar `netBalance` (ganhos − gastos − parcelas do mês); listar parcelas no resumo |
-| 1.3 | Categorias consistentes | Modelo `Category` (income/expense) + selects na UI; base para relatórios |
-| 1.4 | Contas / carteiras (opcional) | `Account` (corrente, carteira, PIX); `MonthEntry.accountId` |
-| 1.5 | Metas mensais (budget) | Limite por categoria/mês; alertas visuais em 80%/100% |
-| 1.6 | Alinhar tipos TypeScript | `DashboardSummary` e respostas enriquecidas de parcelas em `frontend/src/types.ts` |
-| 1.7 | Toast / modal de confirmação | Substituir `alert`/`confirm` por componente reutilizável |
+| # | Item | Status | Descrição |
+|---|------|--------|-----------|
+| 1.1 | Sync inteligente de fixos | ✅ | `services/syncFixed.ts`, `sync-fixed` com `upsert`, `POST .../propagate` |
+| 1.2 | Saldo “real” no dashboard | ✅ | Card `netBalance` + tabela `monthInstallments` |
+| 1.3 | Categorias consistentes | ✅ | Modelo `Category`, API `/categories`, selects em Fixos/Meses |
+| 1.4 | Contas / carteiras (opcional) | ⏸️ | Adiado — `Account` + `MonthEntry.accountId` |
+| 1.5 | Metas mensais (budget) | ✅ | `MonthlyBudget`, API `/budgets`, seção em Meses |
+| 1.6 | Alinhar tipos TypeScript | ✅ | `DashboardSummary`, `InstallmentMonthView`, etc. em `types.ts` |
+| 1.7 | Toast / modal de confirmação | ✅ | `ToastProvider` + `ConfirmProvider` |
+| 1.8 | Exclusão de fixos em Meses | ✅ | `FixedMonthSkip` — delete não recria no sync |
 
 **Entregável:** app web confiável para controle financeiro pessoal diário.
 
@@ -93,14 +95,14 @@ O FinTrack já cobre bem o **ciclo mensal de planejamento**: fixos → lançamen
 
 ### Itens técnicos
 
-| # | Item | Descrição |
-|---|------|-----------|
-| 2.1 | Postgres em produção | Migrar de SQLite; manter SQLite opcional em dev |
-| 2.2 | Auth mínima | E-mail mágico ou passkey — sync PC ↔ celular (mesmo usuário) |
-| 2.3 | Pacote `packages/shared` | Tipos, Zod, constantes compartilhados web + mobile |
-| 2.4 | Contrato API documentado | OpenAPI ou tRPC (opcional) |
-| 2.5 | Valores em centavos | `Int` ou `Decimal` no schema — evitar `Float` |
-| 2.6 | Camada `services/` no backend | Extrair sync, parcelas, dashboard das rotas — testável |
+| # | Item | Status | Descrição |
+|---|------|--------|-----------|
+| 2.1 | Postgres em produção | ✅ | Supabase Postgres; Prisma `postgresql` + `DATABASE_URL` / `DIRECT_URL` |
+| 2.2 | Auth mínima | ✅ | Supabase Auth — login e-mail/senha, magic link, JWT no `useApi` |
+| 2.3 | Pacote `packages/shared` | ⏳ | Tipos, Zod, constantes compartilhados web + mobile |
+| 2.4 | Contrato API documentado | ⏳ | OpenAPI ou tRPC (opcional) |
+| 2.5 | Valores em centavos | ⏳ | `Int` ou `Decimal` no schema — evitar `Float` |
+| 2.6 | Camada `services/` no backend | 🔶 | `syncFixed.ts` centralizado; dashboard/parcelas ainda nas rotas |
 
 **Entregável:** API hospedada, autenticada, pronta para primeiro build Expo.
 
@@ -143,8 +145,9 @@ O FinTrack já cobre bem o **ciclo mensal de planejamento**: fixos → lançamen
 ## Roadmap visual (resumo)
 
 ```
-Agora        → Fase 1: sync fixos + netBalance na UI + categorias + toasts
-1–2 meses    → Fase 2: Postgres + auth + shared types + services
+Agora        → Fase 1 completa + exclusão Meses corrigida
+Próximo      → Fase 2.3–2.6: shared types, centavos, services testáveis
+1–2 meses    → Fase 3: Expo MVP
 MVP mobile   → Fase 3: Expo (Meses + rápido + Dashboard + agente)
 Depois       → Fase 3.3–3.6: notificações, offline, fatura
 Opcional     → Fase 4: import, Open Finance, multi-usuário

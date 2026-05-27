@@ -1,0 +1,26 @@
+{
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/mobile/android/**": true,
+    "**/mobile/ios/**": true,
+    "**/mobile/.expo/**": true,
+    "**/mobile/dist/**": true,
+    "**/backend/node_modules/**": true,
+    "**/frontend/node_modules/**": true,
+    "**/frontend/dist/**": true,
+    "**/.vite/**": true,
+    "**/build/**": true,
+    "**/.dart_tool/**": true,
+    "**/coverage/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/mobile/android": true,
+    "**/mobile/ios": true,
+    "**/mobile/.expo": true,
+    "**/.dart_tool": true,
+    "**/package-lock.json": true
+  }
+}

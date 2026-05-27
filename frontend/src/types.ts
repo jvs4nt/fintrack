@@ -61,6 +61,11 @@ export interface Installment {
   createdAt: string;
 }
 
+export interface InstallmentMonthView extends Installment {
+  currentMonthInstallment: number;
+  installmentAmount: number;
+}
+
 export interface Saving {
   id: number;
   name: string;
@@ -76,21 +81,46 @@ export interface DashboardSummary {
     totalIncome: number;
     totalExpense: number;
     balance: number;
+    totalInstallments: number;
+    netBalance: number;
   };
   nextDueCard: {
     name: string;
+    dueDate: string;
     daysUntilDue: number;
   } | null;
   lastEntries: MonthEntry[];
   sixMonthsData: {
+    month: number;
+    year: number;
     label: string;
     income: number;
     expense: number;
   }[];
+  monthInstallments: InstallmentMonthView[];
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  type: 'income' | 'expense';
+}
+
+export interface BudgetItem {
+  category: string;
+  limit: number;
+  spent: number;
+  percent: number;
+  status: 'ok' | 'warning' | 'exceeded';
+}
+
+export interface MonthBudgetResponse {
+  budgets: BudgetItem[];
+  alerts: { category: string; status: 'warning' | 'exceeded'; percent: number }[];
 }
 
 export interface Settings {
-  id: number;
+  userId: string;
   payday: number;
   updatedAt: string;
 }
@@ -116,4 +146,14 @@ export interface AgentChatResponse {
   needsConfirmation?: boolean;
   pendingAction?: AgentPendingAction | null;
   options?: AgentOption[];
+}
+
+export interface SyncFixedResponse {
+  message: string;
+  created: number;
+  updated: number;
+}
+
+export interface PropagateFixedResponse {
+  updated: number;
 }

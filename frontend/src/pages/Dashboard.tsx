@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { DashboardSummary } from '../types';
+import LoadingLogo from '../components/LoadingLogo';
 
 interface DashboardProps {
   selectedYear: number;
   selectedMonth: number;
 }
 
-// Página Dashboard - Visão geral do mês atual
 function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
   const api = useApi();
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Carregar dados do dashboard
   useEffect(() => {
     loadDashboard();
   }, [selectedYear, selectedMonth]);
@@ -25,14 +24,14 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
     try {
       const result = await api.dashboard.getSummary(selectedYear, selectedMonth);
       setData(result);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(message);
     } finally {
       setLoading(false);
     }
   }
 
-  // Formatador de moeda
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -47,7 +46,7 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">Visão geral do mês</p>
         </header>
-        <div className="loading">Carregando...</div>
+        <LoadingLogo />
       </div>
     );
   }
@@ -66,7 +65,39 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
 
   if (!data) return null;
 
-  const { summary, nextDueCard, lastEntries, sixMonthsData } = data as any;
+  const { summary, nextDueCard, lastEntries, sixMonthsData, monthInstallments } = data;
+
+  const chartW = 400;
+  const chartH = 200;
+  const chartPadL = 8;
+  const chartPadR = 8;
+  const chartPadT = 12;
+  const chartPadB = 32;
+  const plotW = chartW - chartPadL - chartPadR;
+  const plotH = chartH - chartPadT - chartPadB;
+  const chartBaseY = chartPadT + plotH;
+  const chartMaxY = Math.max(1, ...sixMonthsData.flatMap((m) => [m.income, m.expense]));
+  const chartStepX = sixMonthsData.length > 1 ? plotW / (sixMonthsData.length - 1) : 0;
+
+  function chartPoint(index: number, value: number) {
+    const x = chartPadL + index * chartStepX;
+    const y = chartBaseY - (value / chartMaxY) * plotH;
+    return { x, y };
+  }
+
+  const incomePolyline = sixMonthsData
+    .map((m, i) => {
+      const { x, y } = chartPoint(i, m.income);
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  const expensePolyline = sixMonthsData
+    .map((m, i) => {
+      const { x, y } = chartPoint(i, m.expense);
+      return `${x},${y}`;
+    })
+    .join(' ');
 
   return (
     <div>
@@ -80,31 +111,35 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
         </p>
       </header>
 
-      {/* Card de Saldo em Destaque */}
-      <div className="card card-bordered-left" style={{
-        borderLeftColor: summary.netBalance >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)',
-        marginBottom: 'var(--spacing-xl)',
-      } as React.CSSProperties}>
+      <div
+        className="card card-bordered-left"
+        style={{
+          borderLeftColor:
+            summary.netBalance >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)',
+          marginBottom: 'var(--spacing-xl)',
+        }}
+      >
         <div className="stat-label">Saldo Líquido do Mês (c/ Parcelas)</div>
         <div
-          className="stat-value"
-          style={{
-            color: summary.netBalance >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)',
-            fontSize: '2.5rem',
-          }}
+          className={`stat-value dashboard-net-value ${
+            summary.netBalance >= 0 ? 'positive' : 'negative'
+          }`}
         >
           {formatCurrency(summary.netBalance)}
         </div>
-        <div className="stat-subvalue">
-          Ganhos: {formatCurrency(summary.totalIncome)} | Gastos: {formatCurrency(summary.totalExpense)} | Parcelas: {formatCurrency(summary.totalInstallments)}
+        <div className="stat-subvalue dashboard-summary-line">
+          Ganhos: {formatCurrency(summary.totalIncome)} | Gastos:{' '}
+          {formatCurrency(summary.totalExpense)} | Parcelas:{' '}
+          {formatCurrency(summary.totalInstallments)}
         </div>
       </div>
 
-      {/* Cards de Resumo */}
       <div className="dashboard-grid">
         <div className="stat-card">
           <div className="stat-label">💰 Total Ganhos</div>
-          <div className="stat-value positive">{formatCurrency(summary.totalIncome)}</div>
+          <div className="stat-value positive">
+            {formatCurrency(summary.totalIncome)}
+          </div>
         </div>
 
         <div className="stat-card">
@@ -142,40 +177,95 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
         </div>
       </div>
 
-      {/* Gráfico de Barras - Últimos 6 meses */}
+      {monthInstallments.length > 0 && (
+        <div className="table-container installments-summary-table">
+          <h3
+            className="chart-title"
+            style={{ padding: 'var(--spacing-md) var(--spacing-lg)' }}
+          >
+            💳 Parcelas do mês
+          </h3>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th>Cartão</th>
+                <th>Parcela</th>
+                <th className="text-right">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthInstallments.map((inst) => (
+                <tr key={inst.id}>
+                  <td>{inst.description}</td>
+                  <td>{inst.card?.name ?? '—'}</td>
+                  <td>
+                    {inst.currentMonthInstallment} / {inst.totalInstallments}
+                  </td>
+                  <td className="text-right" style={{ color: 'var(--accent-warning)' }}>
+                    {formatCurrency(inst.installmentAmount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <div className="chart-container">
         <h3 className="chart-title">📈 Ganhos vs Gastos (Últimos 6 meses)</h3>
-        <div className="bar-chart">
+        <div className="line-chart-legend">
+          <span className="legend-item">
+            <span className="legend-swatch income" aria-hidden />
+            Ganhos
+          </span>
+          <span className="legend-item">
+            <span className="legend-swatch expense" aria-hidden />
+            Gastos
+          </span>
+        </div>
+        <svg
+          className="line-chart"
+          viewBox={`0 0 ${chartW} ${chartH}`}
+          role="img"
+          aria-label="Gráfico de linhas: ganhos e gastos nos últimos 6 meses">
+          <line
+            x1={chartPadL}
+            y1={chartBaseY}
+            x2={chartPadL + plotW}
+            y2={chartBaseY}
+            className="line-chart-axis"
+          />
+          <polyline points={incomePolyline} className="line-chart-line income" fill="none" />
+          <polyline points={expensePolyline} className="line-chart-line expense" fill="none" />
           {sixMonthsData.map((month, index) => {
-            const maxValue = Math.max(
-              ...sixMonthsData.map((m) => Math.max(m.income, m.expense)),
-              1
-            );
-            const incomeHeight = (month.income / maxValue) * 160;
-            const expenseHeight = (month.expense / maxValue) * 160;
-
+            const incomePt = chartPoint(index, month.income);
+            const expensePt = chartPoint(index, month.expense);
             return (
-              <div key={index} className="bar-group">
-                <div className="bars">
-                  <div
-                    className="bar income"
-                    style={{ height: `${incomeHeight}px` }}
-                    title={`Ganhos: ${formatCurrency(month.income)}`}
-                  />
-                  <div
-                    className="bar expense"
-                    style={{ height: `${expenseHeight}px` }}
-                    title={`Gastos: ${formatCurrency(month.expense)}`}
-                  />
-                </div>
-                <span className="bar-label">{month.label}</span>
-              </div>
+              <g key={`${month.year}-${month.month}`}>
+                <circle
+                  cx={incomePt.x}
+                  cy={incomePt.y}
+                  r={4}
+                  className="line-chart-point income">
+                  <title>{`${month.label} — Ganhos: ${formatCurrency(month.income)}`}</title>
+                </circle>
+                <circle
+                  cx={expensePt.x}
+                  cy={expensePt.y}
+                  r={4}
+                  className="line-chart-point expense">
+                  <title>{`${month.label} — Gastos: ${formatCurrency(month.expense)}`}</title>
+                </circle>
+                <text x={incomePt.x} y={chartH - 6} className="line-chart-label">
+                  {month.label}
+                </text>
+              </g>
             );
           })}
-        </div>
+        </svg>
       </div>
 
-      {/* Últimos Lançamentos */}
       <div className="table-container">
         <h3 className="chart-title" style={{ padding: 'var(--spacing-md) var(--spacing-lg)' }}>
           📋 Últimos Lançamentos
@@ -190,17 +280,19 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
             </tr>
           </thead>
           <tbody>
-            {lastEntries && lastEntries.length > 0 ? (
+            {lastEntries.length > 0 ? (
               lastEntries.map((entry) => (
                 <tr key={entry.id}>
                   <td>
                     {entry.description}
                     {entry.isFixed && (
-                      <span style={{
-                        marginLeft: 'var(--spacing-sm)',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                      }}>
+                      <span
+                        style={{
+                          marginLeft: 'var(--spacing-sm)',
+                          fontSize: '0.75rem',
+                          color: 'var(--text-secondary)',
+                        }}
+                      >
                         (Fixo)
                       </span>
                     )}
@@ -210,7 +302,10 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
                   <td
                     className="text-right"
                     style={{
-                      color: entry.type === 'income' ? 'var(--accent-primary)' : 'var(--accent-danger)',
+                      color:
+                        entry.type === 'income'
+                          ? 'var(--accent-primary)'
+                          : 'var(--accent-danger)',
                       fontFamily: 'var(--font-display)',
                       fontWeight: 600,
                     }}

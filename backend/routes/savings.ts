@@ -1,13 +1,14 @@
-// Rota de Reservas Financeiras - Savings
 import express, { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { getUserId, routeParamInt } from '../types/auth';
 
 const router = express.Router();
 
-// Listar todas as reservas
 router.get('/', async (req: Request, res: Response) => {
   try {
+    const userId = getUserId(req);
     const savings = await prisma.saving.findMany({
+      where: { userId },
       include: {
         history: {
           orderBy: { date: 'desc' },
@@ -22,9 +23,9 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Criar nova reserva
 router.post('/', async (req: Request, res: Response) => {
   try {
+    const userId = getUserId(req);
     const { name, institution, type, amount } = req.body;
 
     if (!name || !type || !amount) {
@@ -33,6 +34,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     const saving = await prisma.saving.create({
       data: {
+        userId,
         name,
         institution: institution || 'Não especificado',
         type,
@@ -40,7 +42,6 @@ router.post('/', async (req: Request, res: Response) => {
       },
     });
 
-    // Criar primeiro registro no histórico
     await prisma.savingHistory.create({
       data: {
         savingId: saving.id,
@@ -54,49 +55,49 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// Editar reserva
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { name, institution, type } = req.body;
+    const userId = getUserId(req);
+    const existing = await prisma.saving.findFirst({
+      where: { id: routeParamInt(req.params.id), userId },
+    });
+    if (!existing) {
+      return res.status(404).json({ error: 'Reserva não encontrada' });
+    }
 
+    const { name, institution, type } = req.body;
     const saving = await prisma.saving.update({
-      where: { id: parseInt(id) },
-      data: {
-        name,
-        institution,
-        type,
-      },
+      where: { id: existing.id },
+      data: { name, institution, type },
     });
 
     res.json(saving);
-  } catch (error: any) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Reserva não encontrada' });
-    }
+  } catch (error) {
     res.status(500).json({ error: 'Erro ao editar reserva' });
   }
 });
 
-// Atualizar valor da reserva (com histórico)
 router.patch('/:id/amount', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const userId = getUserId(req);
     const { amount } = req.body;
 
     if (!amount) {
       return res.status(400).json({ error: 'Campo obrigatório: amount' });
     }
 
-    // Atualizar valor da reserva
+    const existing = await prisma.saving.findFirst({
+      where: { id: routeParamInt(req.params.id), userId },
+    });
+    if (!existing) {
+      return res.status(404).json({ error: 'Reserva não encontrada' });
+    }
+
     const saving = await prisma.saving.update({
-      where: { id: parseInt(id) },
-      data: {
-        amount: parseFloat(amount),
-      },
+      where: { id: existing.id },
+      data: { amount: parseFloat(amount) },
     });
 
-    // Registrar no histórico
     await prisma.savingHistory.create({
       data: {
         savingId: saving.id,
@@ -105,21 +106,23 @@ router.patch('/:id/amount', async (req: Request, res: Response) => {
     });
 
     res.json(saving);
-  } catch (error: any) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Reserva não encontrada' });
-    }
+  } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar valor da reserva' });
   }
 });
 
-// Buscar histórico de uma reserva
 router.get('/:id/history', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const userId = getUserId(req);
+    const saving = await prisma.saving.findFirst({
+      where: { id: routeParamInt(req.params.id), userId },
+    });
+    if (!saving) {
+      return res.status(404).json({ error: 'Reserva não encontrada' });
+    }
 
     const history = await prisma.savingHistory.findMany({
-      where: { savingId: parseInt(id) },
+      where: { savingId: saving.id },
       orderBy: { date: 'desc' },
       take: 10,
     });
@@ -130,18 +133,19 @@ router.get('/:id/history', async (req: Request, res: Response) => {
   }
 });
 
-// Remover reserva
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    await prisma.saving.delete({
-      where: { id: parseInt(id) },
+    const userId = getUserId(req);
+    const existing = await prisma.saving.findFirst({
+      where: { id: routeParamInt(req.params.id), userId },
     });
-    res.status(204).send();
-  } catch (error: any) {
-    if (error.code === 'P2025') {
+    if (!existing) {
       return res.status(404).json({ error: 'Reserva não encontrada' });
     }
+
+    await prisma.saving.delete({ where: { id: existing.id } });
+    res.status(204).send();
+  } catch (error) {
     res.status(500).json({ error: 'Erro ao remover reserva' });
   }
 });

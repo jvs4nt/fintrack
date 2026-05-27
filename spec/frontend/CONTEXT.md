@@ -8,22 +8,27 @@ React 18 + Vite 6 + TypeScript. **Sem** React Router, Redux, TanStack Query ou U
 
 ```
 frontend/src/
-├── main.tsx           # ReactDOM.createRoot
-├── App.tsx            # Shell: sidebar, páginas, agent modal, payday init
-├── App.css            # Todos os estilos (design system inline)
-├── types.ts           # Interfaces espelhando API
-├── hooks/
-│   └── useApi.ts      # Único cliente HTTP
+├── main.tsx              # AuthProvider + Toast + Confirm
+├── App.tsx               # Gate de login, shell, agent modal
+├── lib/supabase.ts       # Cliente Supabase Auth
+├── context/AuthContext.tsx
+├── App.css
+├── types.ts
+├── hooks/useApi.ts       # HTTP + Bearer JWT
+├── components/           # Toast, Confirm
 └── pages/
+    ├── Login.tsx
     ├── Dashboard.tsx
     ├── Months.tsx
-    ├── Fixed.tsx
-    ├── Cards.tsx
-    ├── Savings.tsx
-    └── Agent.tsx
+    └── …
 ```
 
-Não existe pasta `components/` — UI composta inline nas páginas.
+## Autenticação
+
+- `AuthProvider` envolve o app em `main.tsx`
+- Sem sessão → `Login.tsx` (e-mail/senha, criar conta, magic link)
+- `useApi` envia `Authorization: Bearer` em cada request; 401 → logout
+- Ajustes: botão **Sair** (`signOut`)
 
 ## App shell (`App.tsx`)
 
@@ -31,7 +36,7 @@ Estado global mínimo:
 
 | Estado | Uso |
 |--------|-----|
-| `currentPage` | `dashboard` \| `months` \| `fixed` \| `cards` \| `savings` \| `settings` |
+| `currentPage` | `dashboard` \| `months` \| `fixed` \| `cards` \| `savings` \| `settings` — **Reservas** oculta na nav (`FEATURE_SAVINGS` em `frontend/src/config/features.ts`) |
 | `selectedYear`, `selectedMonth` | Compartilhado Dashboard + Months |
 | `payday` | Settings + cálculo do mês inicial |
 | `isAgentModalOpen` | Modal do assistente |
@@ -48,10 +53,16 @@ Props repassadas às páginas com mês:
 
 ## useApi (`hooks/useApi.ts`)
 
-- Base: `import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333/api'`
-- Função interna `fetchApi<T>(endpoint, options)`
+- Base: em **dev** (`import.meta.env.DEV`), `/api` (proxy Vite → `localhost:3333`); em **produção**, `VITE_API_BASE_URL` ou fallback `http://localhost:3333/api`
+- Função interna `fetchApi<T>(endpoint, options)` — injeta `Authorization: Bearer` da sessão Supabase
 - Retorna objeto com namespaces: `fixedIncomes`, `fixedExpenses`, `months`, `cards`, `installments`, `savings`, `dashboard`, `settings`, `agent`
+- `months.getEntries(y, m, { sync?: boolean })` — sync no servidor por padrão; `{ sync: false }` → `?sync=0`
+- `dashboard.getSummary(y, m, { sync?: boolean })` — idem
 - Erro: `throw new Error(errorData.error || status)`
+
+**Performance:** Meses chama só `getEntries` no load (sem `POST sync-fixed` antes); botão “Sincronizar fixos” usa `syncFixed(..., 'upsert')`. Após login, `App.tsx` não bloqueia o shell em `settings.get()` (payday/mês ajustam quando a resposta chega).
+
+**Categorias:** [`components/CategoryPicker.tsx`](../frontend/src/components/CategoryPicker.tsx) + [`lib/ensureCategory.ts`](../frontend/src/lib/ensureCategory.ts) — combobox (input + dropdown + botão `+`); persistência no banco ao salvar fixo/lançamento.
 
 **Regra:** novos endpoints → adicionar método aqui + tipo em `types.ts`.
 
@@ -103,7 +114,9 @@ npm run dev      # :5173
 npm run build    # dist/
 ```
 
-Env: `frontend/.env.example` → `VITE_API_BASE_URL`.
+Env: copie `frontend/.env.example` → `frontend/.env`. **Dev no Mac (`localhost:5173`):** não precisa de IP da LAN — `useApi` usa `/api` e o proxy em `vite.config.ts` encaminha para o backend local. **Produção:** defina `VITE_API_BASE_URL` com a URL absoluta da API. **Web no celular (LAN):** `npm run dev -- --host`, abra `http://SEU_IP:5173` — o proxy segue o mesmo host; em dev o backend aceita origens `localhost` e `192.168.*:5173` (ver `backend/server.ts`). Mobile Expo: host da API vem do Metro em dev (`spec/mobile/CONTEXT.md`).
+
+**Mobile (≤768px):** `App.css` — `main-content` sem overflow horizontal indesejado; valores e textos com quebra; gráfico de linhas do Dashboard (`.line-chart`) mais compacto; cabeçalhos `.flex-between` empilhados; listas de Meses com `.entry-amount-row`; modais `form-row` em uma coluna; tabelas largas só rolam dentro de `.table-container`.
 
 ## Extensão
 

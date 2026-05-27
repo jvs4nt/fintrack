@@ -11,6 +11,7 @@ Documentação de contexto para agentes e desenvolvedores. **Leia apenas os arqu
 | Nova rota, Prisma, agente, sync fixos | `backend/CONTEXT.md` + `backend/API.md` + `backend/DATA-MODEL.md` |
 | Ajuste de endpoint existente | `backend/API.md` (+ `DATA-MODEL.md` se afetar domínio) |
 | Nova página, UI, hook API | `frontend/CONTEXT.md` + `frontend/PAGES.md` |
+| App mobile Expo | `mobile/CONTEXT.md` + `frontend/PAGES.md` (paridade) + `backend/API.md` |
 | Tipos compartilhados API ↔ UI | `frontend/CONTEXT.md` (seção tipos) + `backend/DATA-MODEL.md` |
 | Regras globais (moeda, datas, erros) | `CONVENTIONS.md` |
 
@@ -27,6 +28,7 @@ Documentação de contexto para agentes e desenvolvedores. **Leia apenas os arqu
 fintrack/
 ├── backend/          # Express + Prisma + SQLite (TypeScript)
 ├── frontend/         # React 18 + Vite (TypeScript)
+├── mobile/           # Expo SDK 54 + Expo Router (TypeScript)
 ├── spec/             # Esta pasta
 └── README.md         # Setup humano (pode estar desatualizado vs spec)
 ```
