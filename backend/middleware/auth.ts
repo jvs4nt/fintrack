@@ -26,6 +26,11 @@ export const requireAuth: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  if (req.method === 'OPTIONS') {
+    next();
+    return;
+  }
+
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Não autenticado' });

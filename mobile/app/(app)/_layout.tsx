@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { Tabs, Redirect } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 import { useAuth } from '@/src/context/AuthContext';
@@ -48,6 +49,15 @@ export default function AppLayout() {
   }
 
   const iosBlur = Platform.OS === 'ios';
+  const insets = useSafeAreaInsets();
+  const baseHeight = 64;
+  const bottomPad = Math.max(insets.bottom, 8);
+
+  const commonTabBarStyle = {
+    height: baseHeight + insets.bottom,
+    paddingTop: 8,
+    paddingBottom: bottomPad,
+  } as const;
 
   return (
     <Tabs
@@ -63,16 +73,22 @@ export default function AppLayout() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontFamily: FontFamily.uiMedium,
+          marginBottom: 2,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 6,
         },
         tabBarStyle: iosBlur
           ? {
               borderTopColor: 'rgba(42,42,56,0.65)',
               backgroundColor: 'rgba(17,17,24,0.55)',
               elevation: 0,
+              ...commonTabBarStyle,
             }
           : {
               backgroundColor: Theme.bgSecondary,
               borderTopColor: Theme.border,
+              ...commonTabBarStyle,
             },
         tabBarBackground: iosBlur
           ? () => <BlurView tint="dark" intensity={88} style={StyleSheet.absoluteFill} />
