@@ -32,7 +32,12 @@ function parseCorsOrigins(): string | string[] {
   return list;
 }
 
-const LAN_VITE_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+/** Origens sempre liberadas: dev local (qualquer porta) e LAN. */
+const LOCAL_DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+
+/** Hostings estáticos populares — libera deploy/previews sem precisar atualizar CORS_ORIGIN a cada subdomínio. */
+const STATIC_HOSTING_ORIGIN =
+  /^https:\/\/[\w-]+(\.[\w-]+)*\.(pages\.dev|vercel\.app|netlify\.app)$/;
 
 function corsOrigin(
   origin: string | undefined,
@@ -42,7 +47,7 @@ function corsOrigin(
     callback(null, true);
     return;
   }
-  if (process.env.NODE_ENV === 'development' && LAN_VITE_ORIGIN.test(origin)) {
+  if (LOCAL_DEV_ORIGIN.test(origin) || STATIC_HOSTING_ORIGIN.test(origin)) {
     callback(null, true);
     return;
   }
