@@ -1,15 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Tabs, Redirect } from 'expo-router';
 import type { ComponentProps } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Platform, View } from 'react-native';
+import { FinTrackTabBar } from '@/components/FinTrackTabBar';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 import { useAuth } from '@/src/context/AuthContext';
 import { FEATURE_SAVINGS } from '@/src/config/features';
 import LoadingLogo from '@/src/components/LoadingLogo';
+import { useAndroidNavigationBarOnFocus } from '@/src/hooks/useAndroidNavigationBar';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
 
@@ -29,6 +29,7 @@ function TabIcon({
 
 export default function AppLayout() {
   const { session, loading } = useAuth();
+  useAndroidNavigationBarOnFocus();
 
   if (loading) {
     return (
@@ -49,15 +50,6 @@ export default function AppLayout() {
   }
 
   const iosBlur = Platform.OS === 'ios';
-  const insets = useSafeAreaInsets();
-  const baseHeight = 64;
-  const bottomPad = Math.max(insets.bottom, 8);
-
-  const commonTabBarStyle = {
-    height: baseHeight + insets.bottom,
-    paddingTop: 8,
-    paddingBottom: bottomPad,
-  } as const;
 
   return (
     <Tabs
@@ -66,6 +58,7 @@ export default function AppLayout() {
           void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         },
       }}
+      tabBar={(props) => <FinTrackTabBar {...props} iosBlur={iosBlur} />}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Theme.accentPrimary,
@@ -73,26 +66,19 @@ export default function AppLayout() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontFamily: FontFamily.uiMedium,
-          marginBottom: 2,
         },
         tabBarItemStyle: {
-          paddingVertical: 6,
+          paddingVertical: 0,
         },
-        tabBarStyle: iosBlur
-          ? {
-              borderTopColor: 'rgba(42,42,56,0.65)',
-              backgroundColor: 'rgba(17,17,24,0.55)',
-              elevation: 0,
-              ...commonTabBarStyle,
-            }
-          : {
-              backgroundColor: Theme.bgSecondary,
-              borderTopColor: Theme.border,
-              ...commonTabBarStyle,
-            },
-        tabBarBackground: iosBlur
-          ? () => <BlurView tint="dark" intensity={88} style={StyleSheet.absoluteFill} />
-          : undefined,
+        tabBarStyle: {
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+        },
       }}>
       <Tabs.Screen
         name="index"

@@ -7,6 +7,9 @@
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
     "userInterfaceStyle": "dark",
+    "androidNavigationBar": {
+      "enforceContrast": false
+    },
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
@@ -38,8 +41,8 @@
       [
         "expo-navigation-bar",
         {
-          "backgroundColor": "#111118",
-          "barStyle": "light"
+          "barStyle": "light",
+          "enforceContrast": false
         }
       ]
     ],

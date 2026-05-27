@@ -1,10 +1,8 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import * as NavigationBar from 'expo-navigation-bar';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
 import 'react-native-reanimated';
 import {
   Sora_400Regular,
@@ -17,6 +15,7 @@ import { DMMono_400Regular, DMMono_500Medium } from '@expo-google-fonts/dm-mono'
 import { Theme } from '@/constants/Colors';
 import { AuthProvider } from '@/src/context/AuthContext';
 import { ConfirmProvider } from '@/src/context/ConfirmContext';
+import { useAndroidNavigationBar } from '@/src/hooks/useAndroidNavigationBar';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -36,6 +35,8 @@ const navigationTheme = {
 };
 
 export default function RootLayout() {
+  useAndroidNavigationBar();
+
   const [loaded, error] = useFonts({
     Sora_400Regular,
     Sora_500Medium,
@@ -54,13 +55,6 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
-
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    // Mantém a barra de navegação do sistema com a mesma cor da tab bar do app.
-    NavigationBar.setBackgroundColorAsync(Theme.bgSecondary).catch(() => {});
-    NavigationBar.setButtonStyleAsync('light').catch(() => {});
-  }, []);
 
   if (!loaded) {
     return null;
