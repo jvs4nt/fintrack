@@ -114,7 +114,7 @@ npm run dev      # :5173
 npm run build    # dist/
 ```
 
-Env: copie `frontend/.env.example` → `frontend/.env`. **Backend local:** omita `VITE_API_BASE_URL` ou use só path relativo — `useApi` usa `/api` + proxy. **API remota (Render):** `VITE_API_BASE_URL=https://sua-api.onrender.com/api` e reinicie o Vite; no Render, inclua `http://localhost:5173` em `CORS_ORIGIN`. **Build produção:** mesma URL absoluta. Mobile Expo: `spec/mobile/CONTEXT.md`.
+Env: copie `frontend/.env.example` → `frontend/.env`. **Backend local:** omita `VITE_API_BASE_URL` ou use só path relativo — `useApi` usa `/api` + proxy. **API remota (Render):** `VITE_API_BASE_URL=https://sua-api.onrender.com/api` e reinicie o Vite. CORS no backend libera automaticamente `localhost`/`127.0.0.1`/`192.168.*` e domínios `*.pages.dev` / `*.vercel.app` / `*.netlify.app`; `CORS_ORIGIN` só é necessário para domínio próprio. **Build produção:** mesma URL absoluta. Mobile Expo: `spec/mobile/CONTEXT.md`.
 
 **Mobile (≤768px):** `App.css` — `main-content` sem overflow horizontal indesejado; valores e textos com quebra; gráfico de linhas do Dashboard (`.line-chart`) mais compacto; cabeçalhos `.flex-between` empilhados; listas de Meses com `.entry-amount-row`; modais `form-row` em uma coluna; tabelas largas só rolam dentro de `.table-container`.
 
