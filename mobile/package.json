@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:apk": "eas build --platform android --profile preview"
   },
   "dependencies": {
     "@expo-google-fonts/dm-mono": "^0.4.2",
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "eas-cli": "^16.28.0",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
   },

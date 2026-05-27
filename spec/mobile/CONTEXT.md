@@ -51,3 +51,16 @@ cd mobile && npm run start
 ```
 
 Expo Go no telefone (mesma rede que o Mac para a API LAN).
+
+## Build instalável (EAS)
+
+`eas-cli` em `devDependencies`; [`eas.json`](../mobile/eas.json) profile `preview` → APK Android.
+
+```bash
+cd mobile
+npx eas login --browser   # conta Expo via GitHub: abrir browser, "Continue with GitHub"
+npx eas env:push --environment preview --path .env
+npm run build:apk
+```
+
+Ícone/nome: `app.json` (`name`, `icon`, `adaptiveIcon`). `EXPO_PUBLIC_*` em produção vêm do `.env` enviado ao EAS (`env:push`), não do IP do Metro.
