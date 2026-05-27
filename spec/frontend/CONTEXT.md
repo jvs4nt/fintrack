@@ -53,7 +53,7 @@ Props repassadas às páginas com mês:
 
 ## useApi (`hooks/useApi.ts`)
 
-- Base: `import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333/api'`
+- Base: em **dev** (`import.meta.env.DEV`), `/api` (proxy Vite → `localhost:3333`); em **produção**, `VITE_API_BASE_URL` ou fallback `http://localhost:3333/api`
 - Função interna `fetchApi<T>(endpoint, options)` — injeta `Authorization: Bearer` da sessão Supabase
 - Retorna objeto com namespaces: `fixedIncomes`, `fixedExpenses`, `months`, `cards`, `installments`, `savings`, `dashboard`, `settings`, `agent`
 - `months.getEntries(y, m, { sync?: boolean })` — sync no servidor por padrão; `{ sync: false }` → `?sync=0`
@@ -114,7 +114,7 @@ npm run dev      # :5173
 npm run build    # dist/
 ```
 
-Env: copie `frontend/.env.example` → `frontend/.env`. Para testar no **celular** (mesma Wi‑Fi): use o **IP da máquina** em `VITE_API_BASE_URL` (ex. `http://192.168.1.10:3333/api`), rode o Vite com `npm run dev -- --host` e no `backend/.env` inclua a mesma origem em `CORS_ORIGIN` (várias URLs separadas por vírgula — ver `backend/.env.example`).
+Env: copie `frontend/.env.example` → `frontend/.env`. **Dev no Mac (`localhost:5173`):** não precisa de IP da LAN — `useApi` usa `/api` e o proxy em `vite.config.ts` encaminha para o backend local. **Produção:** defina `VITE_API_BASE_URL` com a URL absoluta da API. **Web no celular (LAN):** `npm run dev -- --host`, abra `http://SEU_IP:5173` — o proxy segue o mesmo host; em dev o backend aceita origens `localhost` e `192.168.*:5173` (ver `backend/server.ts`). Mobile Expo: host da API vem do Metro em dev (`spec/mobile/CONTEXT.md`).
 
 **Mobile (≤768px):** `App.css` — `main-content` sem overflow horizontal indesejado; valores e textos com quebra; gráfico de linhas do Dashboard (`.line-chart`) mais compacto; cabeçalhos `.flex-between` empilhados; listas de Meses com `.entry-amount-row`; modais `form-row` em uma coluna; tabelas largas só rolam dentro de `.table-container`.
 

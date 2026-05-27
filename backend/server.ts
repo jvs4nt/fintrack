@@ -32,9 +32,28 @@ function parseCorsOrigins(): string | string[] {
   return list;
 }
 
+const LAN_VITE_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+
+function corsOrigin(
+  origin: string | undefined,
+  callback: (err: Error | null, allow?: boolean) => void
+): void {
+  if (!origin) {
+    callback(null, true);
+    return;
+  }
+  if (process.env.NODE_ENV === 'development' && LAN_VITE_ORIGIN.test(origin)) {
+    callback(null, true);
+    return;
+  }
+  const allowed = parseCorsOrigins();
+  const list = Array.isArray(allowed) ? allowed : [allowed];
+  callback(null, list.includes(origin));
+}
+
 app.use(
   cors({
-    origin: parseCorsOrigins(),
+    origin: corsOrigin,
     credentials: true,
   })
 );
