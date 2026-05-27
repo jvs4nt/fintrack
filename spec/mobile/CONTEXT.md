@@ -54,7 +54,9 @@ Expo Go no telefone (mesma rede que o Mac para a API LAN).
 
 ## Build instalável (EAS)
 
-`eas-cli` em `devDependencies`; [`eas.json`](../mobile/eas.json) profile `preview` → APK Android.
+[`eas.json`](../mobile/eas.json) profile `preview` → APK Android. EAS CLI global (`npm i -g eas-cli`) ou `npx eas`. [`babel.config.js`](../mobile/babel.config.js) com plugin Reanimated (obrigatório para build nativo).
+
+**`@supabase/supabase-js` fixado em `2.74.0`** no mobile: versões ≥2.95 usam `import()` dinâmico para OpenTelemetry que o Hermes não compila (`createBundleReleaseJsAndAssets` falha). Backend e frontend web podem usar a versão mais nova (Node/browser suportam). Ao atualizar, conferir build EAS antes.
 
 ```bash
 cd mobile
