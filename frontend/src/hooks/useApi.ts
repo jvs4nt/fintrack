@@ -16,19 +16,8 @@ import {
   SyncFixedResponse,
   PropagateFixedResponse,
 } from '../types';
+import { resolveApiBase } from '../lib/apiBase';
 import { supabase } from '../lib/supabase';
-
-/** Dev: `/api` → proxy Vite → backend local. Se `VITE_API_BASE_URL` for http(s) absoluto, usa direto (ex.: Render). */
-function resolveApiBase(): string {
-  const fromEnv = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-  if (fromEnv && /^https?:\/\//.test(fromEnv)) {
-    return fromEnv;
-  }
-  if (import.meta.env.DEV) {
-    return '/api';
-  }
-  return fromEnv || 'http://localhost:3333/api';
-}
 
 const API_BASE = resolveApiBase();
 

@@ -21,6 +21,7 @@ import * as Device from 'expo-device';
 import { getSessionSafe, recoverStaleAuthSession } from '@/src/lib/authSession';
 
 const DEFAULT_API_BASE = 'http://localhost:3333/api';
+const DEV_API_PORT = 3333;
 
 function hostFromHostUri(hostUri: string | undefined): string | null {
   if (!hostUri) return null;
@@ -50,39 +51,91 @@ function getDevPackagerHost(): string | null {
   return null;
 }
 
+function isLocalDevHostname(hostname: string): boolean {
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '10.0.2.2') return true;
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  return false;
+}
+
+/** Porta do backend local: do `.env` só se o host for LAN/loopback; senão 3333 (evita herdar :443 de URL de produção). */
+function devApiPortFromEnv(raw: string): number {
+  try {
+    const url = new URL(raw);
+    if (isLocalDevHostname(url.hostname) && url.port) {
+      const p = parseInt(url.port, 10);
+      if (p > 0) return p;
+    }
+  } catch {
+    /* ignore */
+  }
+  return DEV_API_PORT;
+}
+
+/** Expo Go / emulador: API no Mac via HTTP (não reutiliza https/porta de URL de produção no `.env`). */
+function buildLocalDevApiBase(host: string, rawEnv: string): string {
+  const port = devApiPortFromEnv(rawEnv);
+  return `http://${host}:${port}/api`;
+}
+
 /**
- * - Emulador Android: host do Mac via `10.0.2.2`.
- * - Dev (Expo Go / simulador): host do Metro (scriptURL) — o telefone já alcança esse IP para o bundle.
- * - Produção ou sem Metro: `EXPO_PUBLIC_API_BASE_URL` do `.env`.
+ * - Emulador Android: `http://10.0.2.2:3333/api`.
+ * - Dev (Expo Go): `http://<host Metro>:3333/api` — mesmo IP do bundle, backend no Mac.
+ * - Release (APK/EAS): `EXPO_PUBLIC_API_BASE_URL` intacto (ex.: Render HTTPS).
  */
 function resolveApiBaseUrl(): string {
   const raw = (process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_API_BASE).replace(/\/$/, '');
-  try {
-    const url = new URL(raw);
 
-    if (Platform.OS === 'android' && !Device.isDevice) {
-      url.hostname = '10.0.2.2';
-      return url.toString().replace(/\/$/, '');
+  if (__DEV__) {
+    const devOverride = process.env.EXPO_PUBLIC_DEV_API_BASE_URL?.trim();
+    if (devOverride) {
+      return devOverride.replace(/\/$/, '');
     }
+  }
 
-    if (__DEV__) {
-      const packagerHost = getDevPackagerHost();
-      if (packagerHost) {
-        url.hostname = packagerHost;
+  if (Platform.OS === 'android' && !Device.isDevice) {
+    return buildLocalDevApiBase('10.0.2.2', raw);
+  }
+
+  if (__DEV__) {
+    const packagerHost = getDevPackagerHost();
+    if (packagerHost) {
+      return buildLocalDevApiBase(packagerHost, raw);
+    }
+    try {
+      const url = new URL(raw);
+      if (isLocalDevHostname(url.hostname) && url.protocol === 'https:') {
+        url.protocol = 'http:';
+        if (!url.port) url.port = String(DEV_API_PORT);
         return url.toString().replace(/\/$/, '');
       }
+    } catch {
+      /* ignore */
     }
-
-    const loopback = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-    if (!loopback) return raw;
-
-    return raw;
-  } catch {
-    return raw;
   }
+
+  return raw;
 }
 
 const API_BASE = resolveApiBaseUrl();
+
+if (__DEV__) {
+  console.log('[FinTrack] API_BASE:', API_BASE);
+}
+
+function devConnectionHint(): string {
+  const packager = getDevPackagerHost();
+  const base = API_BASE;
+  return (
+    ` URL: ${base}.` +
+    (packager ? ` (Metro: ${packager}).` : '') +
+    ' Inicie o backend no Mac: cd backend && npm run dev.' +
+    ' Teste no navegador do celular: ' +
+    base.replace(/\/api$/, '/api/health') +
+    ' — se não abrir, confira Wi‑Fi (mesma rede) ou defina EXPO_PUBLIC_DEV_API_BASE_URL no mobile/.env' +
+    ' (ex.: http://SEU_IP:3333/api; IP: ipconfig getifaddr en0).'
+  );
+}
 
 function syncQuery(sync?: boolean): string {
   if (sync === false) return '?sync=0';
@@ -111,13 +164,10 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
   try {
     response = await fetch(url, config);
   } catch (e) {
-    const packager = getDevPackagerHost();
     const hint = __DEV__
       ? Platform.OS === 'android' && !Device.isDevice
         ? ' No emulador, inicie o backend no Mac (porta 3333).'
-        : packager
-          ? ` URL usada: ${API_BASE} (host do Metro: ${packager}). Backend rodando nessa máquina?`
-          : ` URL usada: ${API_BASE}. Atualize EXPO_PUBLIC_API_BASE_URL ou abra via Expo Go na mesma rede.`
+        : devConnectionHint()
       : '';
     const msg = e instanceof Error ? e.message : 'Falha de rede';
     throw new Error(

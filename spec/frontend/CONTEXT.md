@@ -20,6 +20,7 @@ frontend/src/
     ├── Login.tsx
     ├── Dashboard.tsx
     ├── Months.tsx
+    ├── ApiDocs.tsx      # só web; rota /api-docs (oculta)
     └── …
 ```
 
@@ -41,7 +42,8 @@ Estado global mínimo:
 | `payday` | Settings + cálculo do mês inicial |
 | `isAgentModalOpen` | Modal do assistente |
 
-Navegação sidebar em array `navigation`. Agente abre via **FAB** 🤖 e modal (não é página `currentPage`).
+Navegação sidebar em array `navigation`. Agente abre via **FAB** 🤖 e modal (não é página `currentPage`). Documentação da API: **`/api-docs`** (pathname em `main.tsx`, sem React Router; não aparece na nav).
+
 
 Props repassadas às páginas com mês:
 
@@ -53,7 +55,7 @@ Props repassadas às páginas com mês:
 
 ## useApi (`hooks/useApi.ts`)
 
-- Base: se `VITE_API_BASE_URL` for URL absoluta (`http://` ou `https://`), usa ela (dev ou prod — ex.: API no Render). Senão, em **dev** `/api` (proxy Vite → `localhost:3333`); em **produção**, fallback `http://localhost:3333/api`
+- Base: em **dev** o `useApi` usa sempre `/api` (mesma origem — sem preflight CORS). O proxy Vite (`'/api/'` em `vite.config.ts`) encaminha para a **origin** de `VITE_API_BASE_URL` (ex. Render) ou `http://localhost:3333` se a variável estiver vazia/for local. Em **produção** (build), usa `VITE_API_BASE_URL` absoluta ou fallback `http://localhost:3333/api`
 - Função interna `fetchApi<T>(endpoint, options)` — injeta `Authorization: Bearer` da sessão Supabase
 - Retorna objeto com namespaces: `fixedIncomes`, `fixedExpenses`, `months`, `cards`, `installments`, `savings`, `dashboard`, `settings`, `agent`
 - `months.getEntries(y, m, { sync?: boolean })` — sync no servidor por padrão; `{ sync: false }` → `?sync=0`

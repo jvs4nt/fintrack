@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabBarTotalHeight } from '@/components/FinTrackTabBar';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
@@ -15,11 +16,12 @@ type PageShellProps = {
 
 export function PageShell({ title, subtitle, headerRight, children }: PageShellProps) {
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useTabBarTotalHeight();
   return (
     <TabScreenTransition>
       <ScrollView
         style={[styles.scroll, { paddingTop: insets.top + Theme.spacingMd }]}
-        contentContainerStyle={styles.content}>
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarHeight + Theme.spacingLg }]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Text style={styles.title}>{title}</Text>

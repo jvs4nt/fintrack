@@ -12,6 +12,12 @@
 | settings | inline em `App.tsx` | `settings.get`, `settings.update` |
 | agent | modal + `Agent.tsx` | `agent.chat` |
 
+## API Docs (rota oculta, somente web)
+
+| Rota URL | Arquivo | Notas |
+|----------|---------|--------|
+| `/api-docs` | `ApiDocs.tsx` | Referência REST de todos os endpoints; dados em `data/apiReference.ts` (espelho de `spec/backend/API.md`). **Sem** link na sidebar nem no mobile. Acesso direto pela URL; em `main.tsx` renderiza fora do shell/login. Deploy estático: fallback `index.html` para `/api-docs`. Dev: proxy Vite usa prefixo `/api/` (não `/api`) para não encaminhar `/api-docs` ao backend. |
+
 ## Dashboard
 
 - Props: `selectedYear`, `selectedMonth` (do App — **não** tem seletor próprio de mês)

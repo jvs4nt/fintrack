@@ -74,6 +74,15 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'FinTrack API está rodando!' });
 });
 
+/** Preflight CORS não leva Bearer — responder antes do auth (deploys antigos / proxies). */
+app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 app.use('/api', requireAuth);
 app.use('/api/fixed-incomes', fixedIncomesRouter);
 app.use('/api/fixed-expenses', fixedExpensesRouter);
