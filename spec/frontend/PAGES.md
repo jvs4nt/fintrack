@@ -72,6 +72,7 @@
 
 - Tela full-page antes do app (`Login.tsx`)
 - Modos: entrar, criar conta, link mágico por e-mail
+- Criar conta: e-mail, senha e confirmação de senha (validação client-side; erro se não coincidirem)
 - Salvar recalcula `selectedYear/Month` e `alert` de sucesso
 
 ## Classes CSS frequentes

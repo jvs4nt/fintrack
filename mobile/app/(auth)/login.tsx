@@ -28,12 +28,20 @@ export default function LoginScreen() {
   const [mode, setMode] = useState<LoginMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (session) {
     return <Redirect href="/(app)" />;
+  }
+
+  function switchMode(next: LoginMode) {
+    setMode(next);
+    setConfirmPassword('');
+    setError(null);
+    setMessage(null);
   }
 
   async function handleSubmit() {
@@ -47,8 +55,13 @@ export default function LoginScreen() {
         return;
       }
       if (mode === 'signup') {
+        if (password !== confirmPassword) {
+          setError('As senhas não coincidem.');
+          return;
+        }
         await signUp(email, password);
         setMessage('Conta criada. Confirme o e-mail se solicitado, ou faça login.');
+        setConfirmPassword('');
         setMode('signin');
         return;
       }
@@ -73,7 +86,9 @@ export default function LoginScreen() {
               Fin<Text style={styles.logoSuffix}>Track</Text>
             </Text>
           </View>
-          <Text style={styles.title}>Entrar</Text>
+          <Text style={styles.title}>
+            {mode === 'signup' ? 'Criar conta' : mode === 'magic' ? 'Link por e-mail' : 'Entrar'}
+          </Text>
           <Text style={styles.subtitle}>Sincronize seus dados entre dispositivos com sua conta.</Text>
 
           {!isSupabaseConfigured ? (
@@ -113,6 +128,21 @@ export default function LoginScreen() {
             </>
           ) : null}
 
+          {mode === 'signup' ? (
+            <>
+              <Text style={styles.label}>Confirmação de senha</Text>
+              <TextInput
+                style={styles.input}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="••••••"
+                placeholderTextColor={Theme.textMuted}
+                secureTextEntry
+                autoComplete="password-new"
+              />
+            </>
+          ) : null}
+
           {error ? <Text style={styles.feedbackError}>{error}</Text> : null}
           {message ? <Text style={styles.feedbackOk}>{message}</Text> : null}
 
@@ -135,21 +165,21 @@ export default function LoginScreen() {
 
           <View style={styles.modeRow}>
             {mode === 'magic' ? (
-              <Pressable onPress={() => setMode('signin')}>
+              <Pressable onPress={() => switchMode('signin')}>
                 <Text style={styles.link}>Voltar ao login</Text>
               </Pressable>
             ) : (
               <>
                 {mode === 'signup' ? (
-                  <Pressable onPress={() => setMode('signin')}>
+                  <Pressable onPress={() => switchMode('signin')}>
                     <Text style={styles.link}>Já tenho conta</Text>
                   </Pressable>
                 ) : (
-                  <Pressable onPress={() => setMode('signup')}>
+                  <Pressable onPress={() => switchMode('signup')}>
                     <Text style={styles.link}>Criar conta</Text>
                   </Pressable>
                 )}
-                <Pressable onPress={() => setMode('magic')}>
+                <Pressable onPress={() => switchMode('magic')}>
                   <Text style={styles.link}>Link por e-mail</Text>
                 </Pressable>
               </>

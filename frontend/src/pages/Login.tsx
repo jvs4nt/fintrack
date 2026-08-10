@@ -8,9 +8,17 @@ function Login() {
   const [mode, setMode] = useState<LoginMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  function switchMode(next: LoginMode) {
+    setMode(next);
+    setConfirmPassword('');
+    setError(null);
+    setMessage(null);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,9 +38,14 @@ function Login() {
       }
 
       if (mode === 'signup') {
+        if (password !== confirmPassword) {
+          setError('As senhas não coincidem.');
+          return;
+        }
         const { error: signUpError } = await supabase.auth.signUp({ email, password });
         if (signUpError) throw signUpError;
         setMessage('Conta criada. Confirme o e-mail se solicitado, ou faça login.');
+        setConfirmPassword('');
         setMode('signin');
         return;
       }
@@ -55,7 +68,7 @@ function Login() {
           Fin<span>Track</span>
         </div>
         <h1 className="page-title" style={{ fontSize: '1.5rem' }}>
-          Entrar
+          {mode === 'signup' ? 'Criar conta' : mode === 'magic' ? 'Link por e-mail' : 'Entrar'}
         </h1>
         <p className="page-subtitle" style={{ marginBottom: 'var(--spacing-lg)' }}>
           Sincronize seus dados entre dispositivos com sua conta.
@@ -89,6 +102,21 @@ function Login() {
             </div>
           )}
 
+          {mode === 'signup' && (
+            <div className="form-group">
+              <label className="form-label">Confirmação de senha</label>
+              <input
+                className="form-input"
+                type="password"
+                required
+                minLength={6}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+            </div>
+          )}
+
           {error && <p className="login-feedback login-feedback-error">{error}</p>}
           {message && <p className="login-feedback login-feedback-success">{message}</p>}
 
@@ -107,17 +135,17 @@ function Login() {
 
         <div className="login-mode-switch">
           {mode !== 'signin' && (
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setMode('signin')}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => switchMode('signin')}>
               Já tenho conta
             </button>
           )}
           {mode !== 'signup' && (
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setMode('signup')}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => switchMode('signup')}>
               Criar conta
             </button>
           )}
           {mode !== 'magic' && (
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setMode('magic')}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => switchMode('magic')}>
               Link por e-mail
             </button>
           )}
