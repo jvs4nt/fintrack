@@ -36,7 +36,7 @@ O FinTrack já cobre bem o **ciclo mensal de planejamento**: fixos → lançamen
 - Parcela **não gera** `MonthEntry` automaticamente — totais do mês e do cartão podem divergir
 - Sem status **pago / pendente** em lançamentos
 - Reservas têm histórico, mas falta **meta** (ex.: “R$ 30k emergência”) e progresso %
-- `Settings` só tem `payday` — faltam preferências (moeda, tema, etc.)
+- `Settings` só tem `payday` — faltam preferências (moeda, etc.); tema é preferência local do web (`localStorage`), sem sync entre dispositivos
 - Pouca ou nenhuma cobertura de testes nas regras de parcela/sync
 
 ---

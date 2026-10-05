@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { useApi } from './hooks/useApi';
+import { useTheme } from './hooks/useTheme';
+import type { ThemePreference } from './lib/theme';
 import { useToast } from './components/ToastProvider';
 import { useAuth } from './context/AuthContext';
 
@@ -26,10 +28,17 @@ const navigation = [
   { id: 'settings', label: 'Ajustes', icon: '⚙️' },
 ];
 
+const themeOptions: { id: ThemePreference; label: string; icon: string }[] = [
+  { id: 'light', label: 'Claro', icon: '☀️' },
+  { id: 'dark', label: 'Escuro', icon: '🌙' },
+  { id: 'system', label: 'Sistema', icon: '🖥️' },
+];
+
 function App() {
   const api = useApi();
   const toast = useToast();
   const { session, loading: authLoading, signOut } = useAuth();
+  const { preference: themePreference, setPreference: setThemePreference } = useTheme();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -180,6 +189,34 @@ function App() {
                   />
                   <button className="btn btn-primary" onClick={() => handleUpdatePayday(payday)}>Salvar</button>
                 </div>
+              </div>
+            </div>
+            <div className="card" style={{ maxWidth: '400px', marginTop: 'var(--spacing-lg)' }}>
+              <h2 id="theme-heading" style={{ fontSize: '1rem', marginBottom: 'var(--spacing-xs)' }}>
+                Aparência
+              </h2>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>
+                Em “Sistema”, o tema acompanha a configuração do seu dispositivo.
+              </p>
+              <div className="theme-switcher" role="radiogroup" aria-labelledby="theme-heading">
+                {themeOptions.map((option) => (
+                  <label
+                    key={option.id}
+                    className={`theme-option ${themePreference === option.id ? 'active' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="theme"
+                      value={option.id}
+                      checked={themePreference === option.id}
+                      onChange={() => setThemePreference(option.id)}
+                    />
+                    <span className="theme-option-icon" aria-hidden>
+                      {option.icon}
+                    </span>
+                    {option.label}
+                  </label>
+                ))}
               </div>
             </div>
             <div className="card" style={{ maxWidth: '400px', marginTop: 'var(--spacing-lg)' }}>
