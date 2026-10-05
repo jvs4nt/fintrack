@@ -6,6 +6,7 @@ import { BudgetItem, Category, InstallmentMonthView, MonthEntry } from '../types
 import LoadingLogo from '../components/LoadingLogo';
 import CategoryPicker from '../components/CategoryPicker';
 import { ensureCategoryExists } from '../lib/ensureCategory';
+import { FEATURE_PAYMENTS } from '../config/features';
 
 // Meses do ano
 const months = [
@@ -69,7 +70,9 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
       const [entriesData, installmentsData, incomeCats, expenseCats, budgetData] =
         await Promise.all([
           api.months.getEntries(selectedYear, selectedMonth),
-          api.installments.getByMonth(selectedYear, selectedMonth),
+          FEATURE_PAYMENTS
+            ? api.installments.getByMonth(selectedYear, selectedMonth)
+            : Promise.resolve([]),
           api.categories.getAll('income'),
           api.categories.getAll('expense'),
           api.budgets.getByMonth(selectedYear, selectedMonth),
@@ -353,7 +356,7 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
                       <span className="entry-name">{entry.description}</span>
                       <span className="entry-meta">
                         {entry.category} • {new Date(entry.date).toLocaleDateString('pt-BR')}
-                        {entry.paymentMethod && ` • ${entry.paymentMethod}`}
+                        {FEATURE_PAYMENTS && entry.paymentMethod && ` • ${entry.paymentMethod}`}
                         {entry.isFixed && ' • (Fixo)'}
                       </span>
                     </div>
@@ -605,7 +608,7 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
                   />
                 </div>
 
-                {formData.type === 'expense' && (
+                {FEATURE_PAYMENTS && formData.type === 'expense' && (
                   <div className="form-group">
                     <label className="form-label">Forma de Pagamento</label>
                     <select

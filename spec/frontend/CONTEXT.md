@@ -37,7 +37,7 @@ Estado global mínimo:
 
 | Estado | Uso |
 |--------|-----|
-| `currentPage` | `dashboard` \| `months` \| `fixed` \| `cards` \| `savings` \| `settings` — **Reservas** oculta na nav (`FEATURE_SAVINGS` em `frontend/src/config/features.ts`) |
+| `currentPage` | `dashboard` \| `months` \| `fixed` \| `cards` \| `savings` \| `settings` — **Reservas** e **Cartões** ocultas na nav (`FEATURE_SAVINGS` / `FEATURE_PAYMENTS` em `frontend/src/config/features.ts`) |
 | `selectedYear`, `selectedMonth` | Compartilhado Dashboard + Months |
 | `payday` | Settings + cálculo do mês inicial |
 | `isAgentModalOpen` | Modal do assistente |

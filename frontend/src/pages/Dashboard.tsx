@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { DashboardSummary } from '../types';
 import LoadingLogo from '../components/LoadingLogo';
+import { FEATURE_PAYMENTS } from '../config/features';
 
 interface DashboardProps {
   selectedYear: number;
@@ -66,6 +67,7 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
   if (!data) return null;
 
   const { summary, nextDueCard, lastEntries, sixMonthsData, monthInstallments } = data;
+  const monthBalance = FEATURE_PAYMENTS ? summary.netBalance : summary.balance;
 
   const chartW = 400;
   const chartH = 200;
@@ -115,22 +117,24 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
         className="card card-bordered-left"
         style={{
           borderLeftColor:
-            summary.netBalance >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)',
+            monthBalance >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)',
           marginBottom: 'var(--spacing-xl)',
         }}
       >
-        <div className="stat-label">Saldo Líquido do Mês (c/ Parcelas)</div>
+        <div className="stat-label">
+          {FEATURE_PAYMENTS ? 'Saldo Líquido do Mês (c/ Parcelas)' : 'Saldo do Mês'}
+        </div>
         <div
           className={`stat-value dashboard-net-value ${
-            summary.netBalance >= 0 ? 'positive' : 'negative'
+            monthBalance >= 0 ? 'positive' : 'negative'
           }`}
         >
-          {formatCurrency(summary.netBalance)}
+          {formatCurrency(monthBalance)}
         </div>
         <div className="stat-subvalue dashboard-summary-line">
           Ganhos: {formatCurrency(summary.totalIncome)} | Gastos:{' '}
-          {formatCurrency(summary.totalExpense)} | Parcelas:{' '}
-          {formatCurrency(summary.totalInstallments)}
+          {formatCurrency(summary.totalExpense)}
+          {FEATURE_PAYMENTS && <> | Parcelas: {formatCurrency(summary.totalInstallments)}</>}
         </div>
       </div>
 
@@ -154,30 +158,32 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-label">💳 Próximo Vencimento</div>
-          {nextDueCard ? (
-            <>
-              <div className="stat-value neutral" style={{ fontSize: '1.2rem' }}>
-                {nextDueCard.name}
-              </div>
-              <div className="stat-subvalue">
-                {nextDueCard.daysUntilDue <= 5 ? (
-                  <span style={{ color: 'var(--accent-danger)' }}>
-                    ⚠️ {nextDueCard.daysUntilDue} dias
-                  </span>
-                ) : (
-                  `${nextDueCard.daysUntilDue} dias`
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="stat-subvalue">Sem cartões</div>
-          )}
-        </div>
+        {FEATURE_PAYMENTS && (
+          <div className="stat-card">
+            <div className="stat-label">💳 Próximo Vencimento</div>
+            {nextDueCard ? (
+              <>
+                <div className="stat-value neutral" style={{ fontSize: '1.2rem' }}>
+                  {nextDueCard.name}
+                </div>
+                <div className="stat-subvalue">
+                  {nextDueCard.daysUntilDue <= 5 ? (
+                    <span style={{ color: 'var(--accent-danger)' }}>
+                      ⚠️ {nextDueCard.daysUntilDue} dias
+                    </span>
+                  ) : (
+                    `${nextDueCard.daysUntilDue} dias`
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="stat-subvalue">Sem cartões</div>
+            )}
+          </div>
+        )}
       </div>
 
-      {monthInstallments.length > 0 && (
+      {FEATURE_PAYMENTS && monthInstallments.length > 0 && (
         <div className="table-container installments-summary-table">
           <h3
             className="chart-title"

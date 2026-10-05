@@ -14,6 +14,7 @@ import { SheetModal } from '@/components/SheetModal';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
+import { FEATURE_PAYMENTS } from '@/src/config/features';
 import { api } from '@/src/lib/api';
 import { ensureCategoryExists } from '@/src/lib/ensureCategory';
 import { computePlanningMonth } from '@/src/hooks/usePlanningMonth';
@@ -91,7 +92,9 @@ export default function MonthsScreen() {
     try {
       const [entriesData, installmentsData, incomeCats, expenseCats] = await Promise.all([
         api.months.getEntries(selectedYear, selectedMonth),
-        api.installments.getByMonth(selectedYear, selectedMonth),
+        FEATURE_PAYMENTS
+          ? api.installments.getByMonth(selectedYear, selectedMonth)
+          : Promise.resolve([]),
         api.categories.getAll('income'),
         api.categories.getAll('expense'),
       ]);
@@ -167,7 +170,10 @@ export default function MonthsScreen() {
         ...form,
         category,
         amount,
-        paymentMethod: form.type === 'expense' ? form.paymentMethod || 'PIX' : undefined,
+        paymentMethod:
+          form.type === 'expense'
+            ? form.paymentMethod || (FEATURE_PAYMENTS ? 'PIX' : undefined)
+            : undefined,
       };
 
       if (editingEntry) {
@@ -391,7 +397,7 @@ export default function MonthsScreen() {
           onChange={(category) => setForm({ ...form, category })}
           categories={formCategories}
         />
-        {form.type === 'expense' ? (
+        {FEATURE_PAYMENTS && form.type === 'expense' ? (
           <>
             <Text style={[styles.label, { marginTop: Theme.spacingMd }]}>Forma de pagamento</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -458,7 +464,7 @@ function EntryRow({
           <Text style={styles.entryName}>{entry.description}</Text>
           <Text style={styles.entryMeta}>
             {entry.category} · {new Date(entry.date + 'T12:00:00').toLocaleDateString('pt-BR')}
-            {entry.paymentMethod ? ` · ${entry.paymentMethod}` : ''}
+            {FEATURE_PAYMENTS && entry.paymentMethod ? ` · ${entry.paymentMethod}` : ''}
             {entry.isFixed ? ' · (Fixo)' : ''}
           </Text>
         </View>
