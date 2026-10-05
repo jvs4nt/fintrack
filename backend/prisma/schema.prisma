@@ -1,4 +1,4 @@
-// FinTrack - Schema Prisma (PostgreSQL / Supabase)
+// FinTrack - Schema Prisma (PostgreSQL / Neon)
 
 datasource db {
   provider  = "postgresql"

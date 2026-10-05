@@ -97,7 +97,7 @@ O FinTrack já cobre bem o **ciclo mensal de planejamento**: fixos → lançamen
 
 | # | Item | Status | Descrição |
 |---|------|--------|-----------|
-| 2.1 | Postgres em produção | ✅ | Supabase Postgres; Prisma `postgresql` + `DATABASE_URL` / `DIRECT_URL` |
+| 2.1 | Postgres em produção | ✅ | Neon Postgres; Prisma `postgresql` + `DATABASE_URL` / `DIRECT_URL` |
 | 2.2 | Auth mínima | ✅ | Supabase Auth — login e-mail/senha, magic link, JWT no `useApi` |
 | 2.3 | Pacote `packages/shared` | ⏳ | Tipos, Zod, constantes compartilhados web + mobile |
 | 2.4 | Contrato API documentado | ⏳ | OpenAPI ou tRPC (opcional) |

@@ -29,14 +29,14 @@ backend/
 - Provider: **postgresql** (`DATABASE_URL` + `DIRECT_URL`)
 - Multi-tenant por `userId` em todas as queries de negócio
 
-### Conexão Supabase (erro “Can’t reach database server at `db.*.supabase.co:5432`”)
+### Conexão Neon
 
-O cliente Prisma usa **somente** `DATABASE_URL` em runtime. Se essa variável apontar para o host **direto** (`db.<ref>.supabase.co`, porta 5432), muitas redes não alcançam o servidor e qualquer rota que use o banco falha.
+O banco é Postgres no **Neon**. O cliente Prisma usa **somente** `DATABASE_URL` em runtime.
 
-- **`DATABASE_URL`**: copie do Dashboard Supabase → **Connect** → **Transaction pooler** (host `*.pooler.supabase.com`, porta **6543**, query `?pgbouncer=true` conforme documentação Prisma + Supabase).
-- **`DIRECT_URL`**: conexão direta `db.<ref>.supabase.co:5432` — use só para `prisma migrate` / `db push`.
+- **`DATABASE_URL`**: connection string **com pooling** do Dashboard Neon (host `ep-<id>-pooler.<region>.aws.neon.tech`).
+- **`DIRECT_URL`**: mesma string **sem** o `-pooler` no host — use só para `prisma migrate` / `db push`.
 
-Em desenvolvimento, se `DATABASE_URL` estiver no host direto, o `prisma/client.ts` emite um aviso no console do backend. Ver também `backend/.env.example`.
+Ver também `backend/.env.example`.
 
 ## Auth
 
