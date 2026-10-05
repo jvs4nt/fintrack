@@ -15,9 +15,10 @@ import { TabScreenTransition } from '@/components/TabScreenTransition';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 import { FEATURE_PAYMENTS } from '@/src/config/features';
+import { useSelectedMonth } from '@/src/context/SelectedMonthContext';
 import { api } from '@/src/lib/api';
 import { ensureCategoryExists } from '@/src/lib/ensureCategory';
-import { computePlanningMonth } from '@/src/hooks/usePlanningMonth';
+import { YEARS } from '@/src/lib/yearMonth';
 import { confirmDestructive, toastMessage } from '@/src/utils/alerts';
 import type { Category, InstallmentMonthView, MonthEntry } from '@/src/types';
 
@@ -36,13 +37,6 @@ const MONTHS = [
   { id: 12, name: 'Dezembro' },
 ];
 
-const currentYear = new Date().getFullYear();
-const MIN_YEAR = 2024;
-const YEARS = Array.from(
-  { length: Math.max(1, currentYear + 5 - MIN_YEAR + 1) },
-  (_, i) => MIN_YEAR + i
-);
-
 const PAYMENT_METHODS = ['PIX', 'Débito', 'Crédito', 'Dinheiro', 'Boleto', 'Transferência'];
 
 function formatBrl(n: number) {
@@ -51,9 +45,8 @@ function formatBrl(n: number) {
 
 export default function MonthsScreen() {
   const insets = useSafeAreaInsets();
-  const [selectedYear, setSelectedYear] = useState(Math.max(currentYear, MIN_YEAR));
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [initDone, setInitDone] = useState(false);
+  const { selected, setSelected, ready } = useSelectedMonth();
+  const { year: selectedYear, month: selectedMonth } = selected;
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<MonthEntry[]>([]);
   const [installments, setInstallments] = useState<InstallmentMonthView[]>([]);
@@ -71,23 +64,8 @@ export default function MonthsScreen() {
     note: '',
   });
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const settings = await api.settings.get();
-        const { year, month } = computePlanningMonth(settings.payday);
-        setSelectedYear(Math.max(year, MIN_YEAR));
-        setSelectedMonth(month);
-      } catch {
-        /* keep defaults */
-      } finally {
-        setInitDone(true);
-      }
-    })();
-  }, []);
-
   const loadMonthData = useCallback(async () => {
-    if (!initDone) return;
+    if (!ready) return;
     setLoading(true);
     try {
       const [entriesData, installmentsData, incomeCats, expenseCats] = await Promise.all([
@@ -107,7 +85,7 @@ export default function MonthsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [selectedYear, selectedMonth, initDone]);
+  }, [selectedYear, selectedMonth, ready]);
 
   useEffect(() => {
     loadMonthData();
@@ -233,7 +211,7 @@ export default function MonthsScreen() {
             {YEARS.map((y) => (
               <Pressable
                 key={y}
-                onPress={() => setSelectedYear(y)}
+                onPress={() => setSelected({ year: y, month: selectedMonth })}
                 style={[styles.yearChip, selectedYear === y && styles.yearChipActive]}>
                 <Text style={[styles.yearChipText, selectedYear === y && styles.yearChipTextActive]}>{y}</Text>
               </Pressable>
@@ -249,7 +227,7 @@ export default function MonthsScreen() {
           {MONTHS.map((m) => (
             <Pressable
               key={m.id}
-              onPress={() => setSelectedMonth(m.id)}
+              onPress={() => setSelected({ year: selectedYear, month: m.id })}
               style={[styles.tab, selectedMonth === m.id && styles.tabActive]}>
               <Text
                 style={[styles.tabText, selectedMonth === m.id && styles.tabTextActive]}

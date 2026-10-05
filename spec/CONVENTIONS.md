@@ -40,9 +40,9 @@
 
 ## Payday (planejamento)
 
-Lógica em `App.tsx` ao iniciar e ao salvar settings:
+`computePlanningMonth` em `frontend/src/lib/yearMonth.ts` e `mobile/src/lib/yearMonth.ts`, aplicado ao iniciar e ao salvar settings:
 
 - Se `diaAtual > payday` → planejar **próximo** mês civil
 - Se `diaAtual <= payday` → planejar **mês civil atual**
 
-Isso define `selectedYear` / `selectedMonth` passados ao Dashboard e Months.
+Isso define o mês inicial de Dashboard e Months (web: `selectedYear` / `selectedMonth` no `App.tsx`; mobile: `SelectedMonthContext`). O cálculo parte do dia 1 do mês para não estourar em dias 29–31.

@@ -20,7 +20,9 @@
 
 ## Dashboard
 
-- Props: `selectedYear`, `selectedMonth` (do App — **não** tem seletor próprio de mês)
+- Props: `selectedYear`, `selectedMonth`, setters e `planningMonth` (do App)
+- Navegação ‹ mês › no cabeçalho ([`MonthNavigator`](../frontend/src/components/MonthNavigator.tsx)): altera o mês compartilhado com Meses; botão **Mês atual** aparece fora do mês de planejamento; setas desabilitam fora de `YEARS`
+- Ao trocar de mês, os dados anteriores ficam visíveis esmaecidos (`.dashboard-body.is-refreshing`) até a resposta chegar; respostas antigas são descartadas; os números animam do valor anterior ao novo
 - Card destaque: `summary.balance` (ganhos − gastos); com `FEATURE_PAYMENTS`, `summary.netBalance` (− parcelas)
 - Tabela **Parcelas do mês** (`monthInstallments`) e card `nextDueCard` — só com `FEATURE_PAYMENTS`
 - Cards ganhos/gastos/saldo, gráfico de linhas 6 meses (ganhos verde / gastos vermelho), últimos 5 `lastEntries`
@@ -28,7 +30,7 @@
 
 ## Months
 
-- Seletor de mês (tabs Jan–Dez) e ano (`years`: atual ±5)
+- Seletor de mês (tabs Jan–Dez) e ano (`YEARS` de `lib/yearMonth.ts`: atual ±5)
 - Ao mudar mês: `syncFixed` + `getEntries` + … (sync respeita `FixedMonthSkip`)
 - **Excluir lançamento (Fixo):** some e não volta após reload — backend grava skip no DELETE
 - Botão **Sincronizar fixos** → `syncFixed(..., 'upsert')`

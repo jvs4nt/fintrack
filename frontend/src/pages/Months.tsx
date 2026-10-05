@@ -7,6 +7,7 @@ import LoadingLogo from '../components/LoadingLogo';
 import CategoryPicker from '../components/CategoryPicker';
 import { ensureCategoryExists } from '../lib/ensureCategory';
 import { FEATURE_PAYMENTS } from '../config/features';
+import { YEARS } from '../lib/yearMonth';
 
 // Meses do ano
 const months = [
@@ -23,10 +24,6 @@ const months = [
   { id: 11, name: 'Novembro' },
   { id: 12, name: 'Dezembro' },
 ];
-
-// Anos disponíveis
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
 
 interface MonthsProps {
   selectedYear: number;
@@ -258,7 +255,7 @@ function Months({ selectedYear, selectedMonth, setSelectedMonth, setSelectedYear
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
             >
-              {years.map((year) => (
+              {YEARS.map((year) => (
                 <option key={year} value={year}>
                   {year}
                 </option>
