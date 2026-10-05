@@ -39,7 +39,8 @@ Estado global mínimo:
 | Estado | Uso |
 |--------|-----|
 | `currentPage` | `dashboard` \| `months` \| `fixed` \| `cards` \| `savings` \| `settings` — **Reservas** e **Cartões** ocultas na nav (`FEATURE_SAVINGS` / `FEATURE_PAYMENTS` em `frontend/src/config/features.ts`) |
-| `selectedYear`, `selectedMonth` | Compartilhado Dashboard + Months |
+| `selectedYear`, `selectedMonth` | Compartilhado Dashboard + Months (setas do Dashboard e seletores de Meses mexem no mesmo estado) |
+| `planningMonth` | Mês de planejamento (payday) — alvo do atalho "Mês atual" no Dashboard |
 | `payday` | Settings + cálculo do mês inicial |
 | `isAgentModalOpen` | Modal do assistente |
 
@@ -52,7 +53,9 @@ Props repassadas às páginas com mês:
 { selectedYear, selectedMonth, setSelectedYear, setSelectedMonth }
 ```
 
-`Fixed`, `Cards`, `Savings` não recebem mês.
+`Fixed`, `Cards`, `Savings` não recebem mês. `Dashboard` recebe também `planningMonth`.
+
+Helpers de ano/mês (`shiftYearMonth`, `computePlanningMonth`, `YEARS`, `formatYearMonth`) em [`lib/yearMonth.ts`](../frontend/src/lib/yearMonth.ts).
 
 ## useApi (`hooks/useApi.ts`)
 

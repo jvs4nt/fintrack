@@ -3,6 +3,7 @@ import './App.css';
 import { useApi } from './hooks/useApi';
 import { useTheme } from './hooks/useTheme';
 import type { ThemePreference } from './lib/theme';
+import { YearMonth, computePlanningMonth } from './lib/yearMonth';
 import { useToast } from './components/ToastProvider';
 import { useAuth } from './context/AuthContext';
 
@@ -42,6 +43,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [planningMonth, setPlanningMonth] = useState<YearMonth | null>(null);
   const [payday, setPayday] = useState(1);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [isAgentModalClosing, setIsAgentModalClosing] = useState(false);
@@ -68,6 +70,13 @@ function App() {
     setIsMobileMenuOpen(false);
   };
 
+  const goToPlanningMonth = (newPayday: number) => {
+    const planning = computePlanningMonth(newPayday);
+    setPlanningMonth(planning);
+    setSelectedYear(planning.year);
+    setSelectedMonth(planning.month);
+  };
+
   useEffect(() => {
     if (!session) return;
 
@@ -75,18 +84,7 @@ function App() {
       try {
         const settings = await api.settings.get();
         setPayday(settings.payday);
-
-        const today = new Date();
-        const currentDay = today.getDate();
-        const planningDate = new Date();
-        if (currentDay > settings.payday) {
-          planningDate.setMonth(today.getMonth() + 1);
-        } else {
-          planningDate.setMonth(today.getMonth());
-        }
-
-        setSelectedYear(planningDate.getFullYear());
-        setSelectedMonth(planningDate.getMonth() + 1);
+        goToPlanningMonth(settings.payday);
       } catch (err) {
         console.error('Erro ao inicializar:', err);
       }
@@ -124,19 +122,7 @@ function App() {
     try {
       await api.settings.update(newPayday);
       setPayday(newPayday);
-      
-      // Recalcula o mês de planejamento imediatamente após a atualização
-      const today = new Date();
-      const currentDay = today.getDate();
-      const planningDate = new Date();
-      if (currentDay > newPayday) {
-        planningDate.setMonth(today.getMonth() + 1);
-      } else {
-        planningDate.setMonth(today.getMonth());
-      }
-      setSelectedYear(planningDate.getFullYear());
-      setSelectedMonth(planningDate.getMonth() + 1);
-      
+      goToPlanningMonth(newPayday);
       toast.success('Dia do recebimento atualizado! O mês de planejamento foi ajustado.');
     } catch (err) {
       toast.error('Erro ao atualizar payday');
@@ -154,7 +140,7 @@ function App() {
 
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard {...pageProps} />;
+        return <Dashboard {...pageProps} planningMonth={planningMonth} />;
       case 'months':
         return <Months {...pageProps} />;
       case 'fixed':

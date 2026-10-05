@@ -11,10 +11,12 @@ import { PageShell } from '@/components/PageShell';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 import { useAuth } from '@/src/context/AuthContext';
+import { useSelectedMonth } from '@/src/context/SelectedMonthContext';
 import { api } from '@/src/lib/api';
 
 export default function SettingsScreen() {
   const { session, signOut } = useAuth();
+  const { applyPayday } = useSelectedMonth();
   const [payday, setPayday] = useState('1');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,6 +51,7 @@ export default function SettingsScreen() {
     setMessage(null);
     try {
       await api.settings.update(n);
+      applyPayday(n);
       setMessage('Salvo.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao salvar');

@@ -19,7 +19,7 @@ import { FontFamily } from '@/constants/Typography';
 import { FEATURE_PAYMENTS } from '@/src/config/features';
 import { api } from '@/src/lib/api';
 import { ensureCategoryExists } from '@/src/lib/ensureCategory';
-import { computePlanningMonth } from '@/src/hooks/usePlanningMonth';
+import { computePlanningMonth } from '@/src/lib/yearMonth';
 import { confirmDestructive, toastMessage } from '@/src/utils/alerts';
 import type { Category, FixedExpense, FixedIncome } from '@/src/types';
 

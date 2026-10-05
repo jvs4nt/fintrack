@@ -25,13 +25,15 @@ Espelha [frontend/PAGES.md](frontend/PAGES.md):
 | Rota (Expo) | Módulo |
 |-------------|--------|
 | `(auth)/login` | Login Supabase |
-| `(app)/index` | Dashboard — mês de planejamento (payday); **recarrega ao focar a aba** (tabs mantêm a tela montada) |
+| `(app)/index` | Dashboard — navegação ‹ mês › ([`MonthNavigator`](../mobile/components/MonthNavigator.tsx)) + atalho **Mês atual**; mantém os dados anteriores esmaecidos ao trocar de mês; **recarrega ao focar a aba** (tabs mantêm a tela montada) |
 | `(app)/months` | Meses / MonthEntry — seções Ganhos, Gastos, Parcelas (só com `FEATURE_PAYMENTS`), Resumo (sem Metas do mês; web mantém metas em [PAGES.md](frontend/PAGES.md)) |
 | `(app)/fixed` | Fixos |
 | `(app)/cards` | Cartões + parcelas — **aba oculta** (`FEATURE_PAYMENTS` em `mobile/src/config/features.ts`, que também esconde forma de pagamento e parcelas nas outras telas); rota e API mantidas |
 | `(app)/savings` | Reservas — **aba oculta** (`FEATURE_SAVINGS` em `mobile/src/config/features.ts`); rota e API mantidas |
 | `(app)/agent` | Agente (`POST /agent/chat`) — **aba oculta** na barra inferior até release dedicada; tela e API permanecem no projeto |
-| `(app)/settings` | Payday + sair |
+| `(app)/settings` | Payday + sair (salvar payday leva Dashboard/Meses ao novo mês de planejamento) |
+
+**Mês selecionado:** [`SelectedMonthContext`](../mobile/src/context/SelectedMonthContext.tsx) (provider em `app/(app)/_layout.tsx`) carrega o payday uma vez, calcula o mês de planejamento e compartilha o mês entre Dashboard e Meses. Helpers em [`src/lib/yearMonth.ts`](../mobile/src/lib/yearMonth.ts).
 
 ## Tema
 
