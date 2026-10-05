@@ -2,7 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { DashboardSummary } from '../types';
 import LoadingLogo from '../components/LoadingLogo';
+import AnimatedNumber from '../components/AnimatedNumber';
 import { FEATURE_PAYMENTS } from '../config/features';
+
+const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+
+const formatCurrency = (value: number) => currencyFormatter.format(value);
 
 interface DashboardProps {
   selectedYear: number;
@@ -32,13 +40,6 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
       setLoading(false);
     }
   }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   if (loading) {
     return (
@@ -129,7 +130,7 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
             monthBalance >= 0 ? 'positive' : 'negative'
           }`}
         >
-          {formatCurrency(monthBalance)}
+          <AnimatedNumber value={monthBalance} format={formatCurrency} duration={1200} />
         </div>
         <div className="stat-subvalue dashboard-summary-line">
           Ganhos: {formatCurrency(summary.totalIncome)} | Gastos:{' '}
@@ -142,19 +143,21 @@ function Dashboard({ selectedYear, selectedMonth }: DashboardProps) {
         <div className="stat-card">
           <div className="stat-label">💰 Total Ganhos</div>
           <div className="stat-value positive">
-            {formatCurrency(summary.totalIncome)}
+            <AnimatedNumber value={summary.totalIncome} format={formatCurrency} delay={100} />
           </div>
         </div>
 
         <div className="stat-card">
           <div className="stat-label">💸 Total Gastos</div>
-          <div className="stat-value negative">{formatCurrency(summary.totalExpense)}</div>
+          <div className="stat-value negative">
+            <AnimatedNumber value={summary.totalExpense} format={formatCurrency} delay={200} />
+          </div>
         </div>
 
         <div className="stat-card">
           <div className="stat-label">📊 Saldo</div>
           <div className={`stat-value ${summary.balance >= 0 ? 'positive' : 'negative'}`}>
-            {formatCurrency(summary.balance)}
+            <AnimatedNumber value={summary.balance} format={formatCurrency} delay={300} />
           </div>
         </div>
 
