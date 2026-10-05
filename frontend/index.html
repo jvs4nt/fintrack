@@ -6,6 +6,26 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>FinTrack — Organizador Financeiro</title>
+    <meta name="theme-color" content="#0a0a0f" />
+
+    <!-- Aplica o tema antes do primeiro paint (sem flash). Espelha src/lib/theme.ts. -->
+    <script>
+      (function () {
+        var pref = 'dark';
+        try {
+          var stored = localStorage.getItem('fintrack-theme');
+          if (stored === 'light' || stored === 'dark' || stored === 'system') pref = stored;
+        } catch (e) {}
+        var theme =
+          pref === 'system'
+            ? window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+            : pref;
+        document.documentElement.dataset.theme = theme;
+        if (theme === 'light') {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f2f1ec');
+        }
+      })();
+    </script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,6 +54,15 @@
         /* Fontes */
         --font-display: 'DM Mono', monospace;
         --font-ui: 'Sora', sans-serif;
+
+        color-scheme: dark;
+      }
+
+      :root[data-theme='light'] {
+        --bg-primary: #f2f1ec;
+        --text-primary: #1d2420;
+
+        color-scheme: light;
       }
 
       body {

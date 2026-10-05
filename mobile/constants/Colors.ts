@@ -1,6 +1,6 @@
 /**
  * FinTrack — Dark Finance (paridade com frontend/src/App.css :root)
- * Único tema; o web não possui light mode.
+ * Único tema no mobile; o tema claro existe só no web (`:root[data-theme='light']`).
  */
 
 export const Theme = {

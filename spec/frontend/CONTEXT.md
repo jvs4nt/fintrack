@@ -11,6 +11,7 @@ frontend/src/
 ├── main.tsx              # AuthProvider + Toast + Confirm
 ├── App.tsx               # Gate de login, shell, agent modal
 ├── lib/supabase.ts       # Cliente Supabase Auth
+├── lib/theme.ts          # Preferência de tema (claro/escuro/sistema)
 ├── context/AuthContext.tsx
 ├── App.css
 ├── types.ts
@@ -117,6 +118,15 @@ npm run build    # dist/
 ```
 
 Env: copie `frontend/.env.example` → `frontend/.env`. **Backend local:** omita `VITE_API_BASE_URL` ou use só path relativo — `useApi` usa `/api` + proxy. **API remota (Render):** `VITE_API_BASE_URL=https://sua-api.onrender.com/api` e reinicie o Vite. CORS no backend libera automaticamente `localhost`/`127.0.0.1`/`192.168.*` e domínios `*.pages.dev` / `*.vercel.app` / `*.netlify.app`; `CORS_ORIGIN` só é necessário para domínio próprio. **Build produção:** mesma URL absoluta. Mobile Expo: `spec/mobile/CONTEXT.md`.
+
+## Tema (claro / escuro)
+
+- Tokens em `App.css`: `:root` = escuro (padrão); `:root[data-theme='light']` sobrescreve com papel neutro quente (`#f2f1ec`) e verde profundo (`#067a55`), mantendo contraste AA
+- Usar **sempre** tokens — nunca hex/rgba direto. Texto sobre fundo de destaque: `--on-accent`; overlays: `--overlay-strong` / `--overlay-soft`; sombras: `--shadow-card` / `--shadow-popover` / `--shadow-modal`; fundo de item ativo: `--accent-soft`. Tintas translúcidas: `color-mix(in srgb, var(--accent-…) 15%, transparent)`
+- Preferência `light` \| `dark` \| `system` em `localStorage` (`fintrack-theme`), padrão `dark`. [`lib/theme.ts`](../frontend/src/lib/theme.ts) + [`hooks/useTheme.ts`](../frontend/src/hooks/useTheme.ts) (usado em `App.tsx`); seletor em **Ajustes → Aparência**
+- Script inline em `index.html` aplica `data-theme` antes do primeiro paint (sem flash) — manter em sincronia com `lib/theme.ts`
+- `system` acompanha `prefers-color-scheme` em tempo real; troca com transição de cor de 250ms (desligada com `prefers-reduced-motion`)
+- Mobile (Expo) ainda só tem o tema escuro
 
 **Mobile (≤768px):** `App.css` — `main-content` sem overflow horizontal indesejado; valores e textos com quebra; gráfico de linhas do Dashboard (`.line-chart`) mais compacto; cabeçalhos `.flex-between` empilhados; listas de Meses com `.entry-amount-row`; modais `form-row` em uma coluna; tabelas largas só rolam dentro de `.table-container`.
 
