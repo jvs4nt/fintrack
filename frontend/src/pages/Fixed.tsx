@@ -6,6 +6,7 @@ import { Category, FixedIncome, FixedExpense } from '../types';
 import LoadingLogo from '../components/LoadingLogo';
 import CategoryPicker from '../components/CategoryPicker';
 import { ensureCategoryExists } from '../lib/ensureCategory';
+import { FEATURE_PAYMENTS } from '../config/features';
 
 interface FixedProps {
   selectedYear: number;
@@ -104,7 +105,7 @@ function Fixed({ selectedYear, selectedMonth }: FixedProps) {
       amount: '',
       dayOfMonth: '',
       category: '',
-      paymentMethod: type === 'expense' ? 'PIX' : '',
+      paymentMethod: FEATURE_PAYMENTS && type === 'expense' ? 'PIX' : '',
       active: true,
     });
     setShowModal(true);
@@ -361,7 +362,7 @@ function Fixed({ selectedYear, selectedMonth }: FixedProps) {
                       </span>
                       <span className="entry-meta">
                         Dia {expense.dayOfMonth} • {expense.category}
-                        {expense.paymentMethod && ` • ${expense.paymentMethod}`}
+                        {FEATURE_PAYMENTS && expense.paymentMethod && ` • ${expense.paymentMethod}`}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
@@ -530,7 +531,7 @@ function Fixed({ selectedYear, selectedMonth }: FixedProps) {
                   />
                 </div>
 
-                {modalType === 'expense' && (
+                {FEATURE_PAYMENTS && modalType === 'expense' && (
                   <div className="form-group">
                     <label className="form-label">Forma de Pagamento</label>
                     <select

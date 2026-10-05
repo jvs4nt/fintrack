@@ -7,7 +7,7 @@ import { FinTrackTabBar } from '@/components/FinTrackTabBar';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 import { useAuth } from '@/src/context/AuthContext';
-import { FEATURE_SAVINGS } from '@/src/config/features';
+import { FEATURE_PAYMENTS, FEATURE_SAVINGS } from '@/src/config/features';
 import LoadingLogo from '@/src/components/LoadingLogo';
 import { useAndroidNavigationBarOnFocus } from '@/src/hooks/useAndroidNavigationBar';
 
@@ -102,14 +102,19 @@ export default function AppLayout() {
           ),
         }}
       />
+      {/* Cartões: rota mantida; aba oculta até retomar FEATURE_PAYMENTS. */}
       <Tabs.Screen
         name="cards"
-        options={{
-          title: 'Cartões',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon outline="card-outline" solid="card" color={color} focused={focused} />
-          ),
-        }}
+        options={
+          FEATURE_PAYMENTS
+            ? {
+                title: 'Cartões',
+                tabBarIcon: ({ color, focused }) => (
+                  <TabIcon outline="card-outline" solid="card" color={color} focused={focused} />
+                ),
+              }
+            : { href: null }
+        }
       />
       {/* Reservas: rota mantida; aba oculta até retomar FEATURE_SAVINGS. */}
       <Tabs.Screen

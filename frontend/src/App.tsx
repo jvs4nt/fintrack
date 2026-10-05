@@ -14,14 +14,14 @@ import Fixed from './pages/Fixed';
 import Cards from './pages/Cards';
 import Savings from './pages/Savings';
 import Agent from './pages/Agent';
-import { FEATURE_SAVINGS } from './config/features';
+import { FEATURE_PAYMENTS, FEATURE_SAVINGS } from './config/features';
 
 // Navegação principal do aplicativo
 const navigation = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
   { id: 'months', label: 'Meses', icon: '📅' },
   { id: 'fixed', label: 'Fixos', icon: '🔄' },
-  { id: 'cards', label: 'Cartões', icon: '💳' },
+  ...(FEATURE_PAYMENTS ? [{ id: 'cards' as const, label: 'Cartões', icon: '💳' }] : []),
   ...(FEATURE_SAVINGS ? [{ id: 'savings' as const, label: 'Reservas', icon: '🏦' }] : []),
   { id: 'settings', label: 'Ajustes', icon: '⚙️' },
 ];
@@ -85,7 +85,10 @@ function App() {
   }, [session]);
 
   useEffect(() => {
-    if (!FEATURE_SAVINGS && currentPage === 'savings') {
+    if (
+      (!FEATURE_SAVINGS && currentPage === 'savings') ||
+      (!FEATURE_PAYMENTS && currentPage === 'cards')
+    ) {
       setCurrentPage('dashboard');
     }
   }, [currentPage]);
@@ -148,7 +151,7 @@ function App() {
       case 'fixed':
         return <Fixed selectedYear={selectedYear} selectedMonth={selectedMonth} />;
       case 'cards':
-        return <Cards />;
+        return FEATURE_PAYMENTS ? <Cards /> : <Dashboard {...pageProps} />;
       case 'savings':
         return FEATURE_SAVINGS ? <Savings /> : <Dashboard {...pageProps} />;
       case 'agent':

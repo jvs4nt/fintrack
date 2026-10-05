@@ -16,6 +16,7 @@ import { SheetModal } from '@/components/SheetModal';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
+import { FEATURE_PAYMENTS } from '@/src/config/features';
 import { api } from '@/src/lib/api';
 import { ensureCategoryExists } from '@/src/lib/ensureCategory';
 import { computePlanningMonth } from '@/src/hooks/usePlanningMonth';
@@ -216,7 +217,7 @@ export default function FixedScreen() {
       amount: '',
       dayOfMonth: '',
       category: '',
-      paymentMethod: type === 'expense' ? 'PIX' : '',
+      paymentMethod: FEATURE_PAYMENTS && type === 'expense' ? 'PIX' : '',
       active: true,
     });
     setShowModal(true);
@@ -230,7 +231,7 @@ export default function FixedScreen() {
       amount: item.amount.toString(),
       dayOfMonth: item.dayOfMonth.toString(),
       category: item.category,
-      paymentMethod: (item as FixedExpense).paymentMethod || 'PIX',
+      paymentMethod: (item as FixedExpense).paymentMethod || (FEATURE_PAYMENTS ? 'PIX' : ''),
       active: item.active,
     });
     setShowModal(true);
@@ -285,7 +286,7 @@ export default function FixedScreen() {
             <FixedRow
               key={ex.id}
               name={ex.name}
-              meta={`Dia ${ex.dayOfMonth} · ${ex.category}${ex.paymentMethod ? ` · ${ex.paymentMethod}` : ''}`}
+              meta={`Dia ${ex.dayOfMonth} · ${ex.category}${FEATURE_PAYMENTS && ex.paymentMethod ? ` · ${ex.paymentMethod}` : ''}`}
               amount={ex.amount}
               tone="expense"
               active={ex.active}
@@ -353,7 +354,7 @@ export default function FixedScreen() {
           onChange={(category) => setForm({ ...form, category })}
           categories={modalType === 'income' ? incomeCategories : expenseCategories}
         />
-        {modalType === 'expense' ? (
+        {FEATURE_PAYMENTS && modalType === 'expense' ? (
           <>
             <Text style={[styles.label, { marginTop: 8 }]}>Pagamento</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">

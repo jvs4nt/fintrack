@@ -6,6 +6,7 @@ import { TabScreenTransition } from '@/components/TabScreenTransition';
 import { SixMonthLines } from '@/components/SixMonthLines';
 import { Theme } from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
+import { FEATURE_PAYMENTS } from '@/src/config/features';
 import { api } from '@/src/lib/api';
 import { computePlanningMonth } from '@/src/hooks/usePlanningMonth';
 import type { DashboardSummary, MonthEntry } from '@/src/types';
@@ -73,6 +74,7 @@ export default function DashboardScreen() {
 
   const dash = summary;
   const { summary: s, nextDueCard, lastEntries, sixMonthsData, monthInstallments } = dash;
+  const monthBalance = FEATURE_PAYMENTS ? s.netBalance : s.balance;
 
   return (
     <PageShell
@@ -95,15 +97,17 @@ export default function DashboardScreen() {
         style={[
           styles.card,
           styles.cardHighlight,
-          { borderLeftColor: s.netBalance >= 0 ? Theme.accentPrimary : Theme.accentDanger },
+          { borderLeftColor: monthBalance >= 0 ? Theme.accentPrimary : Theme.accentDanger },
         ]}>
-        <Text style={styles.statLabel}>Saldo líquido do mês (c/ parcelas)</Text>
-        <Text style={[styles.heroValue, { color: s.netBalance >= 0 ? Theme.accentPrimary : Theme.accentDanger }]}>
-          {formatBrl(s.netBalance)}
+        <Text style={styles.statLabel}>
+          {FEATURE_PAYMENTS ? 'Saldo líquido do mês (c/ parcelas)' : 'Saldo do mês'}
+        </Text>
+        <Text style={[styles.heroValue, { color: monthBalance >= 0 ? Theme.accentPrimary : Theme.accentDanger }]}>
+          {formatBrl(monthBalance)}
         </Text>
         <Text style={styles.muted}>
-          Ganhos {formatBrl(s.totalIncome)} · Gastos {formatBrl(s.totalExpense)} · Parcelas{' '}
-          {formatBrl(s.totalInstallments)}
+          Ganhos {formatBrl(s.totalIncome)} · Gastos {formatBrl(s.totalExpense)}
+          {FEATURE_PAYMENTS ? ` · Parcelas ${formatBrl(s.totalInstallments)}` : ''}
         </Text>
       </View>
 
@@ -115,22 +119,24 @@ export default function DashboardScreen() {
           value={formatBrl(s.balance)}
           color={s.balance >= 0 ? Theme.accentPrimary : Theme.accentDanger}
         />
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Próximo vencimento</Text>
-          {nextDueCard ? (
-            <>
-              <Text style={styles.statMid}>{nextDueCard.name}</Text>
-              <Text style={[styles.muted, nextDueCard.daysUntilDue <= 5 && { color: Theme.accentDanger }]}>
-                {nextDueCard.daysUntilDue <= 5 ? `⚠ ${nextDueCard.daysUntilDue} dias` : `${nextDueCard.daysUntilDue} dias`}
-              </Text>
-            </>
-          ) : (
-            <Text style={styles.muted}>Sem cartões</Text>
-          )}
-        </View>
+        {FEATURE_PAYMENTS ? (
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Próximo vencimento</Text>
+            {nextDueCard ? (
+              <>
+                <Text style={styles.statMid}>{nextDueCard.name}</Text>
+                <Text style={[styles.muted, nextDueCard.daysUntilDue <= 5 && { color: Theme.accentDanger }]}>
+                  {nextDueCard.daysUntilDue <= 5 ? `⚠ ${nextDueCard.daysUntilDue} dias` : `${nextDueCard.daysUntilDue} dias`}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.muted}>Sem cartões</Text>
+            )}
+          </View>
+        ) : null}
       </View>
 
-      {monthInstallments.length > 0 ? (
+      {FEATURE_PAYMENTS && monthInstallments.length > 0 ? (
         <>
           <Text style={styles.sectionTitle}>Parcelas do mês</Text>
           <View style={styles.tableCard}>

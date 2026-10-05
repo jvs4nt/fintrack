@@ -5,9 +5,9 @@
 | ID (`currentPage`) | Arquivo | API principal |
 |--------------------|---------|---------------|
 | dashboard | `Dashboard.tsx` | `dashboard.getSummary(year, month)` |
-| months | `Months.tsx` | `months.*`, `installments.getByMonth` |
+| months | `Months.tsx` | `months.*`, `installments.getByMonth` (só com `FEATURE_PAYMENTS`) |
 | fixed | `Fixed.tsx` | `fixedIncomes.*`, `fixedExpenses.*` |
-| cards | `Cards.tsx` | `cards.*`, `installments.*` |
+| cards | `Cards.tsx` | `cards.*`, `installments.*` — **oculto** na UI (`FEATURE_PAYMENTS = false`) |
 | savings | `Savings.tsx` | `savings.*` — **oculto** na UI (`FEATURE_SAVINGS = false`) |
 | settings | inline em `App.tsx` | `settings.get`, `settings.update` |
 | agent | modal + `Agent.tsx` | `agent.chat` |
@@ -21,9 +21,9 @@
 ## Dashboard
 
 - Props: `selectedYear`, `selectedMonth` (do App — **não** tem seletor próprio de mês)
-- Card destaque: `summary.netBalance` (ganhos − gastos − parcelas)
-- Tabela **Parcelas do mês** (`monthInstallments`)
-- Cards ganhos/gastos/saldo, `nextDueCard`, gráfico de linhas 6 meses (ganhos verde / gastos vermelho), últimos 5 `lastEntries`
+- Card destaque: `summary.balance` (ganhos − gastos); com `FEATURE_PAYMENTS`, `summary.netBalance` (− parcelas)
+- Tabela **Parcelas do mês** (`monthInstallments`) e card `nextDueCard` — só com `FEATURE_PAYMENTS`
+- Cards ganhos/gastos/saldo, gráfico de linhas 6 meses (ganhos verde / gastos vermelho), últimos 5 `lastEntries`
 
 ## Months
 
@@ -31,7 +31,8 @@
 - Ao mudar mês: `syncFixed` + `getEntries` + … (sync respeita `FixedMonthSkip`)
 - **Excluir lançamento (Fixo):** some e não volta após reload — backend grava skip no DELETE
 - Botão **Sincronizar fixos** → `syncFixed(..., 'upsert')`
-- Seções: Ganhos | Gastos | Parcelas | **Metas do mês** | Resumo
+- Seções: Ganhos | Gastos | Parcelas (só com `FEATURE_PAYMENTS`) | **Metas do mês** | Resumo
+- Campo **Forma de Pagamento** no modal de gasto (aqui e em Fixed) só com `FEATURE_PAYMENTS`
 - Categorias: [`CategoryPicker.tsx`](../frontend/src/components/CategoryPicker.tsx) — combobox customizado (sem `<select>` nativo); **+** adiciona nome à lista local; `POST /categories` só no **Salvar** do lançamento (`ensureCategory`)
 - Metas: limites por categoria de despesa, barras 80%/100%
 
@@ -40,8 +41,9 @@
 - Props: `selectedYear`, `selectedMonth` (mês de planejamento para propagate)
 - Categorias: combobox no modal; após editar fixo, diálogo `choose()` para propagar lançamentos
 
-## Cards
+## Cards (UI oculta)
 
+- Módulo em `Cards.tsx`; fora da sidebar enquanto `FEATURE_PAYMENTS === false`
 - Grid de cards visuais (cor `card.color`, últimos 4 dígitos)
 - Badge vencimento se `daysUntilDue <= 5` (cálculo pode ser no front ao listar)
 - Barra de limite usado (soma parcelas ativas / limit)
