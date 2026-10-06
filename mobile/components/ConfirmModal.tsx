@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 
 export type ConfirmModalProps = {
@@ -23,6 +23,7 @@ export function ConfirmModal({
   onCancel,
   onConfirm,
 }: ConfirmModalProps) {
+  const styles = useStyles();
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onCancel}>
       <Pressable style={styles.overlay} onPress={onCancel}>
@@ -52,75 +53,77 @@ export function ConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    justifyContent: 'center',
-    padding: Theme.spacingLg,
-  },
-  center: {
-    alignItems: 'center',
-  },
-  cardWrap: {
-    width: '100%',
-    maxWidth: 360,
-  },
-  card: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: Theme.spacingLg,
-  },
-  title: {
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 18,
-    color: Theme.textPrimary,
-    marginBottom: Theme.spacingSm,
-  },
-  message: {
-    fontFamily: FontFamily.ui,
-    fontSize: 14,
-    color: Theme.textSecondary,
-    marginBottom: Theme.spacingLg,
-    lineHeight: 20,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: Theme.spacingMd,
-    flexWrap: 'wrap',
-  },
-  btnCancel: {
-    paddingVertical: Theme.spacingSm,
-    paddingHorizontal: Theme.spacingMd,
-    borderRadius: Theme.radiusMd,
-    borderWidth: 1,
-    borderColor: Theme.border,
-  },
-  btnCancelText: {
-    fontFamily: FontFamily.uiMedium,
-    fontSize: 15,
-    color: Theme.textSecondary,
-  },
-  btnConfirm: {
-    paddingVertical: Theme.spacingSm,
-    paddingHorizontal: Theme.spacingMd,
-    borderRadius: Theme.radiusMd,
-    backgroundColor: Theme.accentPrimary,
-  },
-  btnConfirmDestructive: {
-    backgroundColor: Theme.bgTertiary,
-    borderWidth: 1,
-    borderColor: Theme.accentDanger,
-  },
-  btnConfirmText: {
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 15,
-    color: Theme.bgPrimary,
-  },
-  btnConfirmTextDestructive: {
-    color: Theme.accentDanger,
-  },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: theme.overlay,
+      justifyContent: 'center',
+      padding: theme.spacingLg,
+    },
+    center: {
+      alignItems: 'center',
+    },
+    cardWrap: {
+      width: '100%',
+      maxWidth: 360,
+    },
+    card: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: theme.spacingLg,
+    },
+    title: {
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 18,
+      color: theme.textPrimary,
+      marginBottom: theme.spacingSm,
+    },
+    message: {
+      fontFamily: FontFamily.ui,
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginBottom: theme.spacingLg,
+      lineHeight: 20,
+    },
+    actions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: theme.spacingMd,
+      flexWrap: 'wrap',
+    },
+    btnCancel: {
+      paddingVertical: theme.spacingSm,
+      paddingHorizontal: theme.spacingMd,
+      borderRadius: theme.radiusMd,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    btnCancelText: {
+      fontFamily: FontFamily.uiMedium,
+      fontSize: 15,
+      color: theme.textSecondary,
+    },
+    btnConfirm: {
+      paddingVertical: theme.spacingSm,
+      paddingHorizontal: theme.spacingMd,
+      borderRadius: theme.radiusMd,
+      backgroundColor: theme.accentPrimary,
+    },
+    btnConfirmDestructive: {
+      backgroundColor: theme.bgTertiary,
+      borderWidth: 1,
+      borderColor: theme.accentDanger,
+    },
+    btnConfirmText: {
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 15,
+      color: theme.onAccent,
+    },
+    btnConfirmTextDestructive: {
+      color: theme.accentDanger,
+    },
+  })
+);

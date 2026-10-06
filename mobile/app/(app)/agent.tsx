@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import { api } from '@/src/lib/api';
 import type { AgentChatResponse, AgentPendingAction } from '@/src/types';
@@ -20,6 +20,8 @@ import type { AgentChatResponse, AgentPendingAction } from '@/src/types';
 type Row = { role: 'user' | 'assistant'; text: string };
 
 export default function AgentScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const [input, setInput] = useState('');
   const [rows, setRows] = useState<Row[]>([]);
@@ -49,7 +51,7 @@ export default function AgentScreen() {
   return (
     <TabScreenTransition>
     <KeyboardAvoidingView
-      style={[styles.root, { paddingTop: insets.top + Theme.spacingMd, paddingBottom: insets.bottom }]}
+      style={[styles.root, { paddingTop: insets.top + theme.spacingMd, paddingBottom: insets.bottom }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.header}>
         <Text style={styles.title}>Agente</Text>
@@ -79,12 +81,12 @@ export default function AgentScreen() {
           value={input}
           onChangeText={setInput}
           placeholder="Sua mensagem..."
-          placeholderTextColor={Theme.textMuted}
+          placeholderTextColor={theme.textMuted}
           editable={!loading}
           onSubmitEditing={() => send()}
         />
         <Pressable style={styles.send} onPress={() => send()} disabled={loading}>
-          {loading ? <ActivityIndicator color={Theme.bgPrimary} /> : <Text style={styles.sendText}>Enviar</Text>}
+          {loading ? <ActivityIndicator color={theme.onAccent} /> : <Text style={styles.sendText}>Enviar</Text>}
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -92,89 +94,91 @@ export default function AgentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Theme.bgPrimary,
-    paddingHorizontal: Theme.spacingLg,
-  },
-  header: {
-    marginBottom: Theme.spacingMd,
-  },
-  title: {
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 26,
-    color: Theme.textPrimary,
-    marginBottom: Theme.spacingSm,
-  },
-  subtitle: {
-    fontFamily: FontFamily.ui,
-    fontSize: 15,
-    color: Theme.textSecondary,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingBottom: Theme.spacingMd,
-  },
-  bubble: {
-    padding: Theme.spacingMd,
-    borderRadius: Theme.radiusMd,
-    marginBottom: Theme.spacingSm,
-    maxWidth: '92%',
-  },
-  bubbleUser: {
-    alignSelf: 'flex-end',
-    backgroundColor: Theme.bgTertiary,
-    borderWidth: 1,
-    borderColor: Theme.border,
-  },
-  bubbleBot: {
-    alignSelf: 'flex-start',
-    backgroundColor: Theme.bgSecondary,
-    borderWidth: 1,
-    borderColor: Theme.borderLight,
-  },
-  bubbleText: {
-    fontFamily: FontFamily.ui,
-    fontSize: 15,
-    color: Theme.textPrimary,
-  },
-  empty: {
-    fontFamily: FontFamily.ui,
-    fontSize: 14,
-    color: Theme.textMuted,
-    fontStyle: 'italic',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Theme.spacingSm,
-    marginTop: Theme.spacingSm,
-  },
-  input: {
-    flex: 1,
-    fontFamily: FontFamily.ui,
-    fontSize: 16,
-    color: Theme.textPrimary,
-    backgroundColor: Theme.bgTertiary,
-    borderRadius: Theme.radiusMd,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    paddingHorizontal: Theme.spacingMd,
-    paddingVertical: Theme.spacingSm + 4,
-  },
-  send: {
-    backgroundColor: Theme.accentPrimary,
-    paddingHorizontal: Theme.spacingMd,
-    paddingVertical: Theme.spacingMd,
-    borderRadius: Theme.radiusMd,
-    minWidth: 88,
-    alignItems: 'center',
-  },
-  sendText: {
-    fontFamily: FontFamily.uiSemiBold,
-    color: Theme.bgPrimary,
-  },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: theme.bgPrimary,
+      paddingHorizontal: theme.spacingLg,
+    },
+    header: {
+      marginBottom: theme.spacingMd,
+    },
+    title: {
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 26,
+      color: theme.textPrimary,
+      marginBottom: theme.spacingSm,
+    },
+    subtitle: {
+      fontFamily: FontFamily.ui,
+      fontSize: 15,
+      color: theme.textSecondary,
+    },
+    list: {
+      flex: 1,
+    },
+    listContent: {
+      paddingBottom: theme.spacingMd,
+    },
+    bubble: {
+      padding: theme.spacingMd,
+      borderRadius: theme.radiusMd,
+      marginBottom: theme.spacingSm,
+      maxWidth: '92%',
+    },
+    bubbleUser: {
+      alignSelf: 'flex-end',
+      backgroundColor: theme.bgTertiary,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    bubbleBot: {
+      alignSelf: 'flex-start',
+      backgroundColor: theme.bgSecondary,
+      borderWidth: 1,
+      borderColor: theme.borderLight,
+    },
+    bubbleText: {
+      fontFamily: FontFamily.ui,
+      fontSize: 15,
+      color: theme.textPrimary,
+    },
+    empty: {
+      fontFamily: FontFamily.ui,
+      fontSize: 14,
+      color: theme.textMuted,
+      fontStyle: 'italic',
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: theme.spacingSm,
+      marginTop: theme.spacingSm,
+    },
+    input: {
+      flex: 1,
+      fontFamily: FontFamily.ui,
+      fontSize: 16,
+      color: theme.textPrimary,
+      backgroundColor: theme.bgTertiary,
+      borderRadius: theme.radiusMd,
+      borderWidth: 1,
+      borderColor: theme.border,
+      paddingHorizontal: theme.spacingMd,
+      paddingVertical: theme.spacingSm + 4,
+    },
+    send: {
+      backgroundColor: theme.accentPrimary,
+      paddingHorizontal: theme.spacingMd,
+      paddingVertical: theme.spacingMd,
+      borderRadius: theme.radiusMd,
+      minWidth: 88,
+      alignItems: 'center',
+    },
+    sendText: {
+      fontFamily: FontFamily.uiSemiBold,
+      color: theme.onAccent,
+    },
+  })
+);

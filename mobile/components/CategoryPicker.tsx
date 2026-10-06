@@ -7,7 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import type { Category } from '@/src/types';
 
@@ -39,6 +39,8 @@ export function CategoryPicker({
   categories,
   disabled = false,
 }: CategoryPickerProps) {
+  const theme = useTheme();
+  const styles = useStyles();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [pendingNames, setPendingNames] = useState<string[]>([]);
@@ -83,7 +85,7 @@ export function CategoryPicker({
         <TextInput
           style={styles.input}
           placeholder="Buscar ou nova categoria"
-          placeholderTextColor={Theme.textMuted}
+          placeholderTextColor={theme.textMuted}
           value={inputValue}
           editable={!disabled}
           onChangeText={(t) => {
@@ -137,60 +139,62 @@ export function CategoryPicker({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { marginBottom: Theme.spacingSm, zIndex: 10 },
-  row: { flexDirection: 'row', gap: Theme.spacingSm, alignItems: 'stretch' },
-  input: {
-    flex: 1,
-    fontFamily: FontFamily.ui,
-    fontSize: 16,
-    color: Theme.textPrimary,
-    backgroundColor: Theme.bgTertiary,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    padding: Theme.spacingMd,
-    minWidth: 0,
-  },
-  addBtn: {
-    width: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Theme.accentPrimary,
-    borderRadius: Theme.radiusMd,
-    backgroundColor: Theme.bgTertiary,
-  },
-  addBtnDisabled: { opacity: 0.5 },
-  addBtnText: {
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 22,
-    color: Theme.accentPrimary,
-    lineHeight: 24,
-  },
-  menu: {
-    marginTop: Theme.spacingXs,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    backgroundColor: Theme.bgSecondary,
-    maxHeight: 200,
-    overflow: 'hidden',
-  },
-  menuScroll: { maxHeight: 200 },
-  option: {
-    paddingVertical: Theme.spacingSm,
-    paddingHorizontal: Theme.spacingMd,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.border,
-  },
-  optionActive: { backgroundColor: Theme.bgTertiary },
-  optionText: { fontFamily: FontFamily.ui, fontSize: 15, color: Theme.textPrimary },
-  optionTextActive: { color: Theme.accentPrimary },
-  empty: {
-    fontFamily: FontFamily.ui,
-    fontSize: 13,
-    color: Theme.textSecondary,
-    padding: Theme.spacingMd,
-  },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    wrap: { marginBottom: theme.spacingSm, zIndex: 10 },
+    row: { flexDirection: 'row', gap: theme.spacingSm, alignItems: 'stretch' },
+    input: {
+      flex: 1,
+      fontFamily: FontFamily.ui,
+      fontSize: 16,
+      color: theme.textPrimary,
+      backgroundColor: theme.bgTertiary,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      padding: theme.spacingMd,
+      minWidth: 0,
+    },
+    addBtn: {
+      width: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.accentPrimary,
+      borderRadius: theme.radiusMd,
+      backgroundColor: theme.bgTertiary,
+    },
+    addBtnDisabled: { opacity: 0.5 },
+    addBtnText: {
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 22,
+      color: theme.accentPrimary,
+      lineHeight: 24,
+    },
+    menu: {
+      marginTop: theme.spacingXs,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      backgroundColor: theme.bgSecondary,
+      maxHeight: 200,
+      overflow: 'hidden',
+    },
+    menuScroll: { maxHeight: 200 },
+    option: {
+      paddingVertical: theme.spacingSm,
+      paddingHorizontal: theme.spacingMd,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    optionActive: { backgroundColor: theme.bgTertiary },
+    optionText: { fontFamily: FontFamily.ui, fontSize: 15, color: theme.textPrimary },
+    optionTextActive: { color: theme.accentPrimary },
+    empty: {
+      fontFamily: FontFamily.ui,
+      fontSize: 13,
+      color: theme.textSecondary,
+      padding: theme.spacingMd,
+    },
+  })
+);

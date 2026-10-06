@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SheetModal } from '@/components/SheetModal';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import { api } from '@/src/lib/api';
 import { confirmDestructive, toastMessage } from '@/src/utils/alerts';
@@ -36,6 +36,8 @@ function formatBrl(n: number) {
 }
 
 export default function SavingsScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [savings, setSavings] = useState<SavingWithHistory[]>([]);
@@ -109,17 +111,17 @@ export default function SavingsScreen() {
 
   return (
     <TabScreenTransition>
-    <View style={[styles.root, { paddingTop: insets.top + Theme.spacingMd }]}>
+    <View style={[styles.root, { paddingTop: insets.top + theme.spacingMd }]}>
       <Text style={styles.title}>Reservas</Text>
       <Text style={styles.sub}>Patrimônio guardado</Text>
 
-      <View style={[styles.hero, { borderLeftColor: Theme.accentPrimary }]}>
+      <View style={[styles.hero, { borderLeftColor: theme.accentPrimary }]}>
         <Text style={styles.heroLabel}>Patrimônio total</Text>
         <Text style={styles.heroValue}>{formatBrl(total)}</Text>
       </View>
 
       {loading ? (
-        <ActivityIndicator color={Theme.accentPrimary} style={{ marginTop: 24 }} />
+        <ActivityIndicator color={theme.accentPrimary} style={{ marginTop: 24 }} />
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
           <View style={styles.rowBetween}>
@@ -143,7 +145,7 @@ export default function SavingsScreen() {
                       <Text style={styles.link}>Valor</Text>
                     </Pressable>
                     <Pressable onPress={() => handleDelete(s.id)}>
-                      <Text style={[styles.link, { color: Theme.accentDanger }]}>Excluir</Text>
+                      <Text style={[styles.link, { color: theme.accentDanger }]}>Excluir</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -167,12 +169,12 @@ export default function SavingsScreen() {
 
           {savings.length > 0 && entries.length > 0 ? (
             <>
-              <Text style={[styles.h2, { marginTop: Theme.spacingLg }]}>Distribuição por tipo</Text>
+              <Text style={[styles.h2, { marginTop: theme.spacingLg }]}>Distribuição por tipo</Text>
               {entries.map(([type, amount]) => {
                 const ti = SAVING_TYPES[type] || SAVING_TYPES.outros;
                 const pct = total > 0 ? (amount / total) * 100 : 0;
                 return (
-                  <View key={type} style={{ marginBottom: Theme.spacingMd }}>
+                  <View key={type} style={{ marginBottom: theme.spacingMd }}>
                     <View style={styles.distHeader}>
                       <Text style={styles.legendText}>{ti.label}</Text>
                       <Text style={styles.legendPct}>{pct.toFixed(1)}% · {formatBrl(amount)}</Text>
@@ -213,7 +215,7 @@ export default function SavingsScreen() {
               key={key}
               style={[styles.typeChip, form.type === key && styles.typeChipActive]}
               onPress={() => setForm({ ...form, type: key })}>
-              <Text style={[styles.typeChipText, form.type === key && { color: Theme.accentPrimary }]}>{v.label}</Text>
+              <Text style={[styles.typeChipText, form.type === key && { color: theme.accentPrimary }]}>{v.label}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -250,74 +252,76 @@ export default function SavingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Theme.bgPrimary, paddingHorizontal: Theme.spacingLg },
-  title: { fontFamily: FontFamily.uiSemiBold, fontSize: 26, color: Theme.textPrimary },
-  sub: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.textSecondary, marginTop: 4 },
-  hero: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderLeftWidth: 4,
-    padding: Theme.spacingLg,
-    marginTop: Theme.spacingMd,
-    marginBottom: Theme.spacingMd,
-  },
-  heroLabel: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.textSecondary },
-  heroValue: { fontFamily: FontFamily.displayBold, fontSize: 32, color: Theme.accentPrimary, marginTop: 8 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacingSm },
-  h2: { fontFamily: FontFamily.uiSemiBold, fontSize: 17, color: Theme.textPrimary },
-  btnSm: { backgroundColor: Theme.accentPrimary, paddingHorizontal: Theme.spacingMd, paddingVertical: Theme.spacingSm, borderRadius: Theme.radiusMd },
-  btnSmText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: Theme.bgPrimary },
-  card: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: Theme.spacingLg,
-    marginBottom: Theme.spacingMd,
-  },
-  cardName: { fontFamily: FontFamily.uiSemiBold, fontSize: 16, color: Theme.textPrimary },
-  typeLabel: { fontFamily: FontFamily.ui, fontSize: 13, marginTop: 4 },
-  inst: { fontFamily: FontFamily.ui, fontSize: 13, color: Theme.textMuted, marginTop: 8 },
-  amt: { fontFamily: FontFamily.displayBold, fontSize: 22, color: Theme.accentPrimary, marginTop: 8 },
-  hist: { marginTop: Theme.spacingMd, borderTopWidth: 1, borderTopColor: Theme.border, paddingTop: Theme.spacingSm },
-  histTitle: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: Theme.textSecondary, marginBottom: 6 },
-  histRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  histDate: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textMuted },
-  histAmt: { fontFamily: FontFamily.displayBold, fontSize: 12, color: Theme.textPrimary },
-  empty: { fontFamily: FontFamily.ui, color: Theme.textMuted },
-  distHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  legendText: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.textPrimary },
-  legendPct: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textMuted },
-  distTrack: { height: 8, backgroundColor: Theme.bgTertiary, borderRadius: 4, overflow: 'hidden' },
-  distFill: { height: 8, borderRadius: 4 },
-  label: { fontFamily: FontFamily.uiMedium, fontSize: 13, color: Theme.textSecondary, marginBottom: 4 },
-  input: {
-    fontFamily: FontFamily.ui,
-    fontSize: 16,
-    color: Theme.textPrimary,
-    backgroundColor: Theme.bgTertiary,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    padding: Theme.spacingMd,
-    marginBottom: Theme.spacingSm,
-  },
-  typeChip: {
-    paddingHorizontal: Theme.spacingMd,
-    paddingVertical: Theme.spacingSm,
-    marginRight: Theme.spacingSm,
-    borderRadius: Theme.radiusMd,
-    borderWidth: 1,
-    borderColor: Theme.border,
-  },
-  typeChipActive: { borderColor: Theme.accentPrimary },
-  typeChipText: { fontFamily: FontFamily.ui, fontSize: 13, color: Theme.textSecondary },
-  bigAmt: { fontFamily: FontFamily.displayBold, fontSize: 24, color: Theme.accentPrimary, marginBottom: Theme.spacingMd },
-  hint: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textMuted, marginTop: 8 },
-  link: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.accentPrimary },
-  btnGhost: { paddingHorizontal: Theme.spacingLg, paddingVertical: Theme.spacingMd },
-  muted: { fontFamily: FontFamily.ui, color: Theme.textMuted },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: theme.bgPrimary, paddingHorizontal: theme.spacingLg },
+    title: { fontFamily: FontFamily.uiSemiBold, fontSize: 26, color: theme.textPrimary },
+    sub: { fontFamily: FontFamily.ui, fontSize: 14, color: theme.textSecondary, marginTop: 4 },
+    hero: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderLeftWidth: 4,
+      padding: theme.spacingLg,
+      marginTop: theme.spacingMd,
+      marginBottom: theme.spacingMd,
+    },
+    heroLabel: { fontFamily: FontFamily.ui, fontSize: 14, color: theme.textSecondary },
+    heroValue: { fontFamily: FontFamily.displayBold, fontSize: 32, color: theme.accentPrimary, marginTop: 8 },
+    rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacingSm },
+    h2: { fontFamily: FontFamily.uiSemiBold, fontSize: 17, color: theme.textPrimary },
+    btnSm: { backgroundColor: theme.accentPrimary, paddingHorizontal: theme.spacingMd, paddingVertical: theme.spacingSm, borderRadius: theme.radiusMd },
+    btnSmText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: theme.onAccent },
+    card: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: theme.spacingLg,
+      marginBottom: theme.spacingMd,
+    },
+    cardName: { fontFamily: FontFamily.uiSemiBold, fontSize: 16, color: theme.textPrimary },
+    typeLabel: { fontFamily: FontFamily.ui, fontSize: 13, marginTop: 4 },
+    inst: { fontFamily: FontFamily.ui, fontSize: 13, color: theme.textMuted, marginTop: 8 },
+    amt: { fontFamily: FontFamily.displayBold, fontSize: 22, color: theme.accentPrimary, marginTop: 8 },
+    hist: { marginTop: theme.spacingMd, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: theme.spacingSm },
+    histTitle: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: theme.textSecondary, marginBottom: 6 },
+    histRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
+    histDate: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textMuted },
+    histAmt: { fontFamily: FontFamily.displayBold, fontSize: 12, color: theme.textPrimary },
+    empty: { fontFamily: FontFamily.ui, color: theme.textMuted },
+    distHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    legendText: { fontFamily: FontFamily.ui, fontSize: 14, color: theme.textPrimary },
+    legendPct: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textMuted },
+    distTrack: { height: 8, backgroundColor: theme.bgTertiary, borderRadius: 4, overflow: 'hidden' },
+    distFill: { height: 8, borderRadius: 4 },
+    label: { fontFamily: FontFamily.uiMedium, fontSize: 13, color: theme.textSecondary, marginBottom: 4 },
+    input: {
+      fontFamily: FontFamily.ui,
+      fontSize: 16,
+      color: theme.textPrimary,
+      backgroundColor: theme.bgTertiary,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      padding: theme.spacingMd,
+      marginBottom: theme.spacingSm,
+    },
+    typeChip: {
+      paddingHorizontal: theme.spacingMd,
+      paddingVertical: theme.spacingSm,
+      marginRight: theme.spacingSm,
+      borderRadius: theme.radiusMd,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    typeChipActive: { borderColor: theme.accentPrimary },
+    typeChipText: { fontFamily: FontFamily.ui, fontSize: 13, color: theme.textSecondary },
+    bigAmt: { fontFamily: FontFamily.displayBold, fontSize: 24, color: theme.accentPrimary, marginBottom: theme.spacingMd },
+    hint: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textMuted, marginTop: 8 },
+    link: { fontFamily: FontFamily.ui, fontSize: 14, color: theme.accentPrimary },
+    btnGhost: { paddingHorizontal: theme.spacingLg, paddingVertical: theme.spacingMd },
+    muted: { fontFamily: FontFamily.ui, color: theme.textMuted },
+  })
+);

@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CategoryPicker } from '@/components/CategoryPicker';
 import { SheetModal } from '@/components/SheetModal';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import { FEATURE_PAYMENTS } from '@/src/config/features';
 import { useSelectedMonth } from '@/src/context/SelectedMonthContext';
@@ -44,6 +44,8 @@ function formatBrl(n: number) {
 }
 
 export default function MonthsScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { selected, setSelected, ready } = useSelectedMonth();
   const { year: selectedYear, month: selectedMonth } = selected;
@@ -193,7 +195,7 @@ export default function MonthsScreen() {
 
   return (
     <TabScreenTransition>
-    <View style={[styles.root, { paddingTop: insets.top + Theme.spacingMd }]}>
+    <View style={[styles.root, { paddingTop: insets.top + theme.spacingMd }]}>
       <View style={styles.chrome}>
         <View style={styles.pageHeader}>
           <View style={{ flex: 1 }}>
@@ -241,7 +243,7 @@ export default function MonthsScreen() {
 
       <View style={styles.contentArea}>
         {loading ? (
-          <ActivityIndicator style={styles.loadingSpinner} color={Theme.accentPrimary} />
+          <ActivityIndicator style={styles.loadingSpinner} color={theme.accentPrimary} />
         ) : (
           <ScrollView style={styles.contentScroll} contentContainerStyle={styles.scroll}>
           <View style={styles.sectionRow}>
@@ -288,7 +290,7 @@ export default function MonthsScreen() {
                   <Text style={styles.entryMeta}>
                     {inst.card?.name} · {inst.currentMonthInstallment}/{inst.totalInstallments}
                   </Text>
-                  <Text style={{ color: Theme.accentWarning, fontFamily: FontFamily.displayBold }}>
+                  <Text style={{ color: theme.accentWarning, fontFamily: FontFamily.displayBold }}>
                     - {formatBrl(inst.installmentAmount)}
                   </Text>
                 </View>
@@ -298,17 +300,17 @@ export default function MonthsScreen() {
 
           <Text style={[styles.h2, styles.sectionHeading]}>Resumo</Text>
           <View style={styles.card}>
-            <Row label="Total ganhos" value={formatBrl(totalIncome)} valueColor={Theme.accentPrimary} />
-            <Row label="Total gastos" value={formatBrl(totalExpense)} valueColor={Theme.accentDanger} />
+            <Row label="Total ganhos" value={formatBrl(totalIncome)} valueColor={theme.accentPrimary} />
+            <Row label="Total gastos" value={formatBrl(totalExpense)} valueColor={theme.accentDanger} />
             {installments.length > 0 ? (
-              <Row label="Parcelas" value={formatBrl(totalInstallments)} valueColor={Theme.accentWarning} />
+              <Row label="Parcelas" value={formatBrl(totalInstallments)} valueColor={theme.accentWarning} />
             ) : null}
-            <Row label="Saldo" value={formatBrl(balance)} valueColor={balance >= 0 ? Theme.accentPrimary : Theme.accentDanger} bold />
+            <Row label="Saldo" value={formatBrl(balance)} valueColor={balance >= 0 ? theme.accentPrimary : theme.accentDanger} bold />
             {installments.length > 0 ? (
               <Row
                 label="Saldo c/ parcelas"
                 value={formatBrl(balance - totalInstallments)}
-                valueColor={balance - totalInstallments >= 0 ? Theme.accentPrimary : Theme.accentDanger}
+                valueColor={balance - totalInstallments >= 0 ? theme.accentPrimary : theme.accentDanger}
                 bold
               />
             ) : null}
@@ -350,7 +352,7 @@ export default function MonthsScreen() {
           value={form.description}
           onChangeText={(d) => setForm({ ...form, description: d })}
           placeholder="Ex: Salário, Mercado"
-          placeholderTextColor={Theme.textMuted}
+          placeholderTextColor={theme.textMuted}
         />
         <Text style={styles.label}>Valor</Text>
         <TextInput
@@ -365,7 +367,7 @@ export default function MonthsScreen() {
           value={form.date}
           onChangeText={(d) => setForm({ ...form, date: d })}
           placeholder="2026-05-01"
-          placeholderTextColor={Theme.textMuted}
+          placeholderTextColor={theme.textMuted}
         />
         <Text style={styles.label}>Categoria</Text>
         <CategoryPicker
@@ -377,7 +379,7 @@ export default function MonthsScreen() {
         />
         {FEATURE_PAYMENTS && form.type === 'expense' ? (
           <>
-            <Text style={[styles.label, { marginTop: Theme.spacingMd }]}>Forma de pagamento</Text>
+            <Text style={[styles.label, { marginTop: theme.spacingMd }]}>Forma de pagamento</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {PAYMENT_METHODS.map((pm) => (
                 <Pressable
@@ -390,7 +392,7 @@ export default function MonthsScreen() {
             </ScrollView>
           </>
         ) : null}
-        <Text style={[styles.label, { marginTop: Theme.spacingMd }]}>Observações</Text>
+        <Text style={[styles.label, { marginTop: theme.spacingMd }]}>Observações</Text>
         <TextInput
           style={[styles.input, { minHeight: 72 }]}
           multiline
@@ -414,6 +416,7 @@ function Row({
   valueColor: string;
   bold?: boolean;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.summaryRow}>
       <Text style={[styles.summaryLabel, bold && { fontFamily: FontFamily.uiSemiBold }]}>{label}</Text>
@@ -433,8 +436,10 @@ function EntryRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const border = tone === 'income' ? Theme.accentPrimary : Theme.accentDanger;
-  const amtColor = tone === 'income' ? Theme.accentPrimary : Theme.accentDanger;
+  const theme = useTheme();
+  const styles = useStyles();
+  const border = tone === 'income' ? theme.accentPrimary : theme.accentDanger;
+  const amtColor = tone === 'income' ? theme.accentPrimary : theme.accentDanger;
   return (
     <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: border }]}>
       <View style={styles.entryTop}>
@@ -455,157 +460,159 @@ function EntryRow({
           <Text style={styles.linkBtn}>Editar</Text>
         </Pressable>
         <Pressable onPress={onDelete}>
-          <Text style={[styles.linkBtn, { color: Theme.accentDanger }]}>Excluir</Text>
+          <Text style={[styles.linkBtn, { color: theme.accentDanger }]}>Excluir</Text>
         </Pressable>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Theme.bgPrimary, paddingHorizontal: Theme.spacingLg },
-  chrome: { flexShrink: 0 },
-  contentArea: { flex: 1, justifyContent: 'flex-start' },
-  contentScroll: { flex: 1 },
-  loadingSpinner: { alignSelf: 'flex-start', marginTop: Theme.spacingMd },
-  pageHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: Theme.spacingMd, gap: Theme.spacingSm },
-  pageTitle: { fontFamily: FontFamily.uiSemiBold, fontSize: 26, color: Theme.textPrimary },
-  pageSubtitle: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.textSecondary, marginTop: 4 },
-  btnSecondary: {
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    paddingHorizontal: Theme.spacingSm,
-    paddingVertical: Theme.spacingSm,
-    alignSelf: 'flex-start',
-  },
-  btnSecondaryText: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textSecondary },
-  yearRow: { marginBottom: Theme.spacingSm },
-  label: { fontFamily: FontFamily.uiMedium, fontSize: 13, color: Theme.textSecondary, marginBottom: 6 },
-  yearChip: {
-    paddingHorizontal: Theme.spacingMd,
-    paddingVertical: Theme.spacingSm,
-    borderRadius: Theme.radiusMd,
-    backgroundColor: Theme.bgTertiary,
-    marginRight: Theme.spacingSm,
-    borderWidth: 1,
-    borderColor: Theme.border,
-  },
-  yearChipActive: { borderColor: Theme.accentPrimary, backgroundColor: Theme.bgSecondary },
-  yearChipText: { fontFamily: FontFamily.ui, color: Theme.textSecondary },
-  yearChipTextActive: { color: Theme.accentPrimary },
-  monthTabs: { marginBottom: Theme.spacingMd, flexGrow: 0 },
-  monthTabsContent: {
-    alignItems: 'flex-start',
-    paddingVertical: Theme.spacingXs,
-  },
-  tab: {
-    minHeight: 48,
-    minWidth: 80,
-    maxWidth: 104,
-    paddingHorizontal: Theme.spacingSm,
-    paddingVertical: Theme.spacingSm,
-    marginRight: Theme.spacingSm,
-    borderRadius: Theme.radiusMd,
-    backgroundColor: Theme.bgTertiary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tabActive: { backgroundColor: Theme.bgSecondary, borderWidth: 1, borderColor: Theme.accentPrimary },
-  tabText: {
-    fontFamily: FontFamily.ui,
-    color: Theme.textMuted,
-    fontSize: 12,
-    lineHeight: 16,
-    textAlign: 'center',
-    includeFontPadding: false,
-  },
-  tabTextActive: { color: Theme.accentPrimary },
-  scroll: { paddingBottom: Theme.spacingXl * 3 },
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacingSm },
-  sectionHeading: { marginTop: Theme.spacingLg, marginBottom: Theme.spacingSm },
-  h2: { fontFamily: FontFamily.uiSemiBold, fontSize: 17, color: Theme.textPrimary },
-  btnPrimarySm: {
-    backgroundColor: Theme.accentPrimary,
-    paddingHorizontal: Theme.spacingMd,
-    paddingVertical: Theme.spacingSm,
-    borderRadius: Theme.radiusMd,
-  },
-  btnPrimarySmText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: Theme.bgPrimary },
-  card: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: Theme.spacingMd,
-    marginBottom: Theme.spacingSm,
-  },
-  borderWarning: { borderLeftWidth: 4, borderLeftColor: Theme.accentWarning },
-  entryTop: { flexDirection: 'row', alignItems: 'flex-start', gap: Theme.spacingSm },
-  entryName: { fontFamily: FontFamily.uiSemiBold, fontSize: 15, color: Theme.textPrimary },
-  entryMeta: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textMuted, marginTop: 4 },
-  entryActions: { flexDirection: 'row', gap: Theme.spacingLg, marginTop: Theme.spacingSm },
-  linkBtn: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.accentPrimary },
-  empty: { fontFamily: FontFamily.ui, color: Theme.textMuted, marginBottom: Theme.spacingMd },
-  input: {
-    fontFamily: FontFamily.ui,
-    fontSize: 16,
-    color: Theme.textPrimary,
-    backgroundColor: Theme.bgTertiary,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    padding: Theme.spacingMd,
-    marginBottom: Theme.spacingSm,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: Theme.spacingSm,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.border,
-  },
-  summaryLabel: { fontFamily: FontFamily.ui, color: Theme.textSecondary },
-  rowGap: { flexDirection: 'row', gap: Theme.spacingSm, marginBottom: Theme.spacingMd },
-  typeChip: {
-    paddingHorizontal: Theme.spacingMd,
-    paddingVertical: Theme.spacingSm,
-    borderRadius: Theme.radiusMd,
-    borderWidth: 1,
-    borderColor: Theme.border,
-  },
-  typeChipActive: { borderColor: Theme.accentPrimary, backgroundColor: Theme.bgTertiary },
-  typeChipText: { fontFamily: FontFamily.ui, color: Theme.textSecondary },
-  typeChipTextActive: { color: Theme.accentPrimary },
-  catListBox: {
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    backgroundColor: Theme.bgTertiary,
-    marginBottom: Theme.spacingSm,
-    overflow: 'hidden',
-  },
-  catRow: { paddingVertical: Theme.spacingSm, paddingHorizontal: Theme.spacingSm, borderBottomWidth: 1, borderBottomColor: Theme.border },
-  catRowActive: { backgroundColor: Theme.bgTertiary },
-  catRowText: { fontFamily: FontFamily.ui, color: Theme.textPrimary },
-  pmChip: {
-    paddingHorizontal: Theme.spacingMd,
-    paddingVertical: Theme.spacingSm,
-    marginRight: Theme.spacingSm,
-    borderRadius: Theme.radiusMd,
-    borderWidth: 1,
-    borderColor: Theme.border,
-  },
-  pmChipActive: { borderColor: Theme.accentPrimary },
-  pmChipText: { fontFamily: FontFamily.ui, fontSize: 13, color: Theme.textSecondary },
-  pmChipTextActive: { color: Theme.accentPrimary },
-  btnGhost: { paddingHorizontal: Theme.spacingLg, paddingVertical: Theme.spacingMd },
-  btnGhostText: { fontFamily: FontFamily.ui, color: Theme.textSecondary },
-  btnPrimary: {
-    backgroundColor: Theme.accentPrimary,
-    paddingHorizontal: Theme.spacingLg,
-    paddingVertical: Theme.spacingMd,
-    borderRadius: Theme.radiusMd,
-  },
-  btnPrimaryText: { fontFamily: FontFamily.uiSemiBold, color: Theme.bgPrimary },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: theme.bgPrimary, paddingHorizontal: theme.spacingLg },
+    chrome: { flexShrink: 0 },
+    contentArea: { flex: 1, justifyContent: 'flex-start' },
+    contentScroll: { flex: 1 },
+    loadingSpinner: { alignSelf: 'flex-start', marginTop: theme.spacingMd },
+    pageHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: theme.spacingMd, gap: theme.spacingSm },
+    pageTitle: { fontFamily: FontFamily.uiSemiBold, fontSize: 26, color: theme.textPrimary },
+    pageSubtitle: { fontFamily: FontFamily.ui, fontSize: 14, color: theme.textSecondary, marginTop: 4 },
+    btnSecondary: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      paddingHorizontal: theme.spacingSm,
+      paddingVertical: theme.spacingSm,
+      alignSelf: 'flex-start',
+    },
+    btnSecondaryText: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textSecondary },
+    yearRow: { marginBottom: theme.spacingSm },
+    label: { fontFamily: FontFamily.uiMedium, fontSize: 13, color: theme.textSecondary, marginBottom: 6 },
+    yearChip: {
+      paddingHorizontal: theme.spacingMd,
+      paddingVertical: theme.spacingSm,
+      borderRadius: theme.radiusMd,
+      backgroundColor: theme.bgTertiary,
+      marginRight: theme.spacingSm,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    yearChipActive: { borderColor: theme.accentPrimary, backgroundColor: theme.bgSecondary },
+    yearChipText: { fontFamily: FontFamily.ui, color: theme.textSecondary },
+    yearChipTextActive: { color: theme.accentPrimary },
+    monthTabs: { marginBottom: theme.spacingMd, flexGrow: 0 },
+    monthTabsContent: {
+      alignItems: 'flex-start',
+      paddingVertical: theme.spacingXs,
+    },
+    tab: {
+      minHeight: 48,
+      minWidth: 80,
+      maxWidth: 104,
+      paddingHorizontal: theme.spacingSm,
+      paddingVertical: theme.spacingSm,
+      marginRight: theme.spacingSm,
+      borderRadius: theme.radiusMd,
+      backgroundColor: theme.bgTertiary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    tabActive: { backgroundColor: theme.bgSecondary, borderWidth: 1, borderColor: theme.accentPrimary },
+    tabText: {
+      fontFamily: FontFamily.ui,
+      color: theme.textSecondary,
+      fontSize: 12,
+      lineHeight: 16,
+      textAlign: 'center',
+      includeFontPadding: false,
+    },
+    tabTextActive: { color: theme.accentPrimary },
+    scroll: { paddingBottom: theme.spacingXl * 3 },
+    sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacingSm },
+    sectionHeading: { marginTop: theme.spacingLg, marginBottom: theme.spacingSm },
+    h2: { fontFamily: FontFamily.uiSemiBold, fontSize: 17, color: theme.textPrimary },
+    btnPrimarySm: {
+      backgroundColor: theme.accentPrimary,
+      paddingHorizontal: theme.spacingMd,
+      paddingVertical: theme.spacingSm,
+      borderRadius: theme.radiusMd,
+    },
+    btnPrimarySmText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: theme.onAccent },
+    card: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: theme.spacingMd,
+      marginBottom: theme.spacingSm,
+    },
+    borderWarning: { borderLeftWidth: 4, borderLeftColor: theme.accentWarning },
+    entryTop: { flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacingSm },
+    entryName: { fontFamily: FontFamily.uiSemiBold, fontSize: 15, color: theme.textPrimary },
+    entryMeta: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textMuted, marginTop: 4 },
+    entryActions: { flexDirection: 'row', gap: theme.spacingLg, marginTop: theme.spacingSm },
+    linkBtn: { fontFamily: FontFamily.ui, fontSize: 14, color: theme.accentPrimary },
+    empty: { fontFamily: FontFamily.ui, color: theme.textMuted, marginBottom: theme.spacingMd },
+    input: {
+      fontFamily: FontFamily.ui,
+      fontSize: 16,
+      color: theme.textPrimary,
+      backgroundColor: theme.bgTertiary,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      padding: theme.spacingMd,
+      marginBottom: theme.spacingSm,
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: theme.spacingSm,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    summaryLabel: { fontFamily: FontFamily.ui, color: theme.textSecondary },
+    rowGap: { flexDirection: 'row', gap: theme.spacingSm, marginBottom: theme.spacingMd },
+    typeChip: {
+      paddingHorizontal: theme.spacingMd,
+      paddingVertical: theme.spacingSm,
+      borderRadius: theme.radiusMd,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    typeChipActive: { borderColor: theme.accentPrimary, backgroundColor: theme.bgTertiary },
+    typeChipText: { fontFamily: FontFamily.ui, color: theme.textSecondary },
+    typeChipTextActive: { color: theme.accentPrimary },
+    catListBox: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      backgroundColor: theme.bgTertiary,
+      marginBottom: theme.spacingSm,
+      overflow: 'hidden',
+    },
+    catRow: { paddingVertical: theme.spacingSm, paddingHorizontal: theme.spacingSm, borderBottomWidth: 1, borderBottomColor: theme.border },
+    catRowActive: { backgroundColor: theme.bgTertiary },
+    catRowText: { fontFamily: FontFamily.ui, color: theme.textPrimary },
+    pmChip: {
+      paddingHorizontal: theme.spacingMd,
+      paddingVertical: theme.spacingSm,
+      marginRight: theme.spacingSm,
+      borderRadius: theme.radiusMd,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    pmChipActive: { borderColor: theme.accentPrimary },
+    pmChipText: { fontFamily: FontFamily.ui, fontSize: 13, color: theme.textSecondary },
+    pmChipTextActive: { color: theme.accentPrimary },
+    btnGhost: { paddingHorizontal: theme.spacingLg, paddingVertical: theme.spacingMd },
+    btnGhostText: { fontFamily: FontFamily.ui, color: theme.textSecondary },
+    btnPrimary: {
+      backgroundColor: theme.accentPrimary,
+      paddingHorizontal: theme.spacingLg,
+      paddingVertical: theme.spacingMd,
+      borderRadius: theme.radiusMd,
+    },
+    btnPrimaryText: { fontFamily: FontFamily.uiSemiBold, color: theme.onAccent },
+  })
+);

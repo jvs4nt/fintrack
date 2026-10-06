@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import { useAuth } from '@/src/context/AuthContext';
 import { isSupabaseConfigured } from '@/src/lib/supabase';
@@ -23,6 +23,8 @@ type LoginMode = 'signin' | 'signup' | 'magic';
 const logoSource = require('../../assets/images/fintrack-logo.png');
 
 export default function LoginScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { session, signInWithPassword, signUp, signInWithMagicLink } = useAuth();
   const [mode, setMode] = useState<LoginMode>('signin');
@@ -76,7 +78,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.root, { paddingTop: insets.top + Theme.spacingLg }]}
+      style={[styles.root, { paddingTop: insets.top + theme.spacingLg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
@@ -106,7 +108,7 @@ export default function LoginScreen() {
             value={email}
             onChangeText={setEmail}
             placeholder="voce@email.com"
-            placeholderTextColor={Theme.textMuted}
+            placeholderTextColor={theme.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -121,7 +123,7 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••"
-                placeholderTextColor={Theme.textMuted}
+                placeholderTextColor={theme.textMuted}
                 secureTextEntry
                 autoComplete={mode === 'signup' ? 'password-new' : 'password'}
               />
@@ -136,7 +138,7 @@ export default function LoginScreen() {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="••••••"
-                placeholderTextColor={Theme.textMuted}
+                placeholderTextColor={theme.textMuted}
                 secureTextEntry
                 autoComplete="password-new"
               />
@@ -151,7 +153,7 @@ export default function LoginScreen() {
             onPress={handleSubmit}
             disabled={loading}>
             {loading ? (
-              <ActivityIndicator color={Theme.bgPrimary} />
+              <ActivityIndicator color={theme.onAccent} />
             ) : (
               <Text style={styles.btnPrimaryText}>
                 {mode === 'magic'
@@ -191,119 +193,121 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Theme.bgPrimary,
-  },
-  scroll: {
-    paddingHorizontal: Theme.spacingLg,
-    paddingBottom: Theme.spacingXl,
-  },
-  card: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: Theme.spacingLg,
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Theme.spacingLg,
-  },
-  logoImage: {
-    width: 36,
-    height: 36,
-    marginRight: Theme.spacingSm,
-    resizeMode: 'contain',
-  },
-  logoText: {
-    fontFamily: FontFamily.displayBold,
-    fontSize: 28,
-    letterSpacing: -1,
-    color: Theme.accentPrimary,
-  },
-  logoSuffix: {
-    fontFamily: FontFamily.displayBold,
-    color: Theme.textPrimary,
-  },
-  title: {
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 24,
-    color: Theme.textPrimary,
-    marginBottom: Theme.spacingSm,
-  },
-  subtitle: {
-    fontFamily: FontFamily.ui,
-    fontSize: 15,
-    color: Theme.textSecondary,
-    marginBottom: Theme.spacingLg,
-  },
-  envWarn: {
-    backgroundColor: Theme.bgTertiary,
-    borderWidth: 1,
-    borderColor: Theme.accentWarning,
-    borderRadius: Theme.radiusMd,
-    padding: Theme.spacingMd,
-    marginBottom: Theme.spacingLg,
-  },
-  envWarnText: {
-    fontFamily: FontFamily.ui,
-    fontSize: 13,
-    color: Theme.accentWarning,
-    lineHeight: 18,
-  },
-  label: {
-    fontFamily: FontFamily.uiMedium,
-    fontSize: 14,
-    color: Theme.textSecondary,
-    marginBottom: Theme.spacingSm,
-  },
-  input: {
-    fontFamily: FontFamily.ui,
-    fontSize: 16,
-    color: Theme.textPrimary,
-    backgroundColor: Theme.bgTertiary,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    paddingHorizontal: Theme.spacingMd,
-    paddingVertical: Theme.spacingSm + 4,
-    marginBottom: Theme.spacingMd,
-  },
-  feedbackError: {
-    fontFamily: FontFamily.ui,
-    color: Theme.accentDanger,
-    marginBottom: Theme.spacingMd,
-  },
-  feedbackOk: {
-    fontFamily: FontFamily.ui,
-    color: Theme.accentPrimary,
-    marginBottom: Theme.spacingMd,
-  },
-  btnPrimary: {
-    backgroundColor: Theme.accentPrimary,
-    borderRadius: Theme.radiusMd,
-    paddingVertical: Theme.spacingMd,
-    alignItems: 'center',
-    marginTop: Theme.spacingSm,
-  },
-  btnPrimaryText: {
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 16,
-    color: Theme.bgPrimary,
-  },
-  modeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Theme.spacingMd,
-    marginTop: Theme.spacingLg,
-    justifyContent: 'center',
-  },
-  link: {
-    fontFamily: FontFamily.ui,
-    fontSize: 14,
-    color: Theme.accentPrimary,
-  },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: theme.bgPrimary,
+    },
+    scroll: {
+      paddingHorizontal: theme.spacingLg,
+      paddingBottom: theme.spacingXl,
+    },
+    card: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: theme.spacingLg,
+    },
+    logoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: theme.spacingLg,
+    },
+    logoImage: {
+      width: 36,
+      height: 36,
+      marginRight: theme.spacingSm,
+      resizeMode: 'contain',
+    },
+    logoText: {
+      fontFamily: FontFamily.displayBold,
+      fontSize: 28,
+      letterSpacing: -1,
+      color: theme.accentPrimary,
+    },
+    logoSuffix: {
+      fontFamily: FontFamily.displayBold,
+      color: theme.textPrimary,
+    },
+    title: {
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 24,
+      color: theme.textPrimary,
+      marginBottom: theme.spacingSm,
+    },
+    subtitle: {
+      fontFamily: FontFamily.ui,
+      fontSize: 15,
+      color: theme.textSecondary,
+      marginBottom: theme.spacingLg,
+    },
+    envWarn: {
+      backgroundColor: theme.bgTertiary,
+      borderWidth: 1,
+      borderColor: theme.accentWarning,
+      borderRadius: theme.radiusMd,
+      padding: theme.spacingMd,
+      marginBottom: theme.spacingLg,
+    },
+    envWarnText: {
+      fontFamily: FontFamily.ui,
+      fontSize: 13,
+      color: theme.accentWarning,
+      lineHeight: 18,
+    },
+    label: {
+      fontFamily: FontFamily.uiMedium,
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginBottom: theme.spacingSm,
+    },
+    input: {
+      fontFamily: FontFamily.ui,
+      fontSize: 16,
+      color: theme.textPrimary,
+      backgroundColor: theme.bgTertiary,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      paddingHorizontal: theme.spacingMd,
+      paddingVertical: theme.spacingSm + 4,
+      marginBottom: theme.spacingMd,
+    },
+    feedbackError: {
+      fontFamily: FontFamily.ui,
+      color: theme.accentDanger,
+      marginBottom: theme.spacingMd,
+    },
+    feedbackOk: {
+      fontFamily: FontFamily.ui,
+      color: theme.accentPrimary,
+      marginBottom: theme.spacingMd,
+    },
+    btnPrimary: {
+      backgroundColor: theme.accentPrimary,
+      borderRadius: theme.radiusMd,
+      paddingVertical: theme.spacingMd,
+      alignItems: 'center',
+      marginTop: theme.spacingSm,
+    },
+    btnPrimaryText: {
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 16,
+      color: theme.onAccent,
+    },
+    modeRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: theme.spacingMd,
+      marginTop: theme.spacingLg,
+      justifyContent: 'center',
+    },
+    link: {
+      fontFamily: FontFamily.ui,
+      fontSize: 14,
+      color: theme.accentPrimary,
+    },
+  })
+);

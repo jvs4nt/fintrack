@@ -1,8 +1,9 @@
-import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useMemo } from 'react';
 import 'react-native-reanimated';
 import {
   Sora_400Regular,
@@ -12,30 +13,42 @@ import {
 } from '@expo-google-fonts/sora';
 import { DMMono_400Regular, DMMono_500Medium } from '@expo-google-fonts/dm-mono';
 
-import { Theme } from '@/constants/Colors';
 import { AuthProvider } from '@/src/context/AuthContext';
 import { ConfirmProvider } from '@/src/context/ConfirmContext';
 import { useAndroidNavigationBar } from '@/src/hooks/useAndroidNavigationBar';
+import { AppThemeProvider, useAppTheme } from '@/src/theme/ThemeContext';
 
 export { ErrorBoundary } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
 
-const navigationTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: Theme.accentPrimary,
-    background: Theme.bgPrimary,
-    card: Theme.bgSecondary,
-    text: Theme.textPrimary,
-    border: Theme.border,
-    notification: Theme.accentDanger,
-  },
-};
-
 export default function RootLayout() {
+  return (
+    <AppThemeProvider>
+      <RootNavigator />
+    </AppThemeProvider>
+  );
+}
+
+function RootNavigator() {
+  const { theme, scheme, ready: themeReady } = useAppTheme();
   useAndroidNavigationBar();
+
+  const navigationTheme = useMemo(() => {
+    const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: theme.accentPrimary,
+        background: theme.bgPrimary,
+        card: theme.bgSecondary,
+        text: theme.textPrimary,
+        border: theme.border,
+        notification: theme.accentDanger,
+      },
+    };
+  }, [theme, scheme]);
 
   const [loaded, error] = useFonts({
     Sora_400Regular,
@@ -51,12 +64,12 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
+    if (loaded && themeReady) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded, themeReady]);
 
-  if (!loaded) {
+  if (!loaded || !themeReady) {
     return null;
   }
 
@@ -64,10 +77,11 @@ export default function RootLayout() {
     <AuthProvider>
       <ConfirmProvider>
         <ThemeProvider value={navigationTheme}>
+          <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: Theme.bgPrimary },
+              contentStyle: { backgroundColor: theme.bgPrimary },
             }}>
             <Stack.Screen
               name="index"

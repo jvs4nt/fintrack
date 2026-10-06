@@ -4,7 +4,7 @@ import { BlurView } from 'expo-blur';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Theme } from '@/constants/Colors';
+import { useAppTheme } from '@/src/theme/ThemeContext';
 
 export const TAB_CONTENT_HEIGHT = 56;
 
@@ -26,9 +26,10 @@ type FinTrackTabBarProps = BottomTabBarProps & {
 };
 
 export function FinTrackTabBar({ iosBlur = false, insets: tabInsets, ...props }: FinTrackTabBarProps) {
+  const { theme, scheme } = useAppTheme();
   const insets = useSafeAreaInsets();
   const bottomInset = getNavigationBarInset(insets.bottom);
-  const barBg = iosBlur ? 'rgba(17,17,24,0.55)' : Theme.bgSecondary;
+  const barBg = iosBlur ? theme.glassBg : theme.bgSecondary;
 
   return (
     <View
@@ -36,11 +37,11 @@ export function FinTrackTabBar({ iosBlur = false, insets: tabInsets, ...props }:
         styles.wrapper,
         {
           minHeight: TAB_CONTENT_HEIGHT + bottomInset,
-          borderTopColor: iosBlur ? 'rgba(42,42,56,0.65)' : Theme.border,
+          borderTopColor: iosBlur ? theme.glassBorder : theme.border,
           backgroundColor: barBg,
         },
       ]}>
-      {iosBlur ? <BlurView tint="dark" intensity={88} style={StyleSheet.absoluteFill} /> : null}
+      {iosBlur ? <BlurView tint={scheme} intensity={88} style={StyleSheet.absoluteFill} /> : null}
       <BottomTabBar
         {...props}
         insets={{
