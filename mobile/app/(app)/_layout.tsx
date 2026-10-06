@@ -4,7 +4,7 @@ import { Tabs, Redirect } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { Platform, View } from 'react-native';
 import { FinTrackTabBar } from '@/components/FinTrackTabBar';
-import { Theme } from '@/constants/Colors';
+import { useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import { useAuth } from '@/src/context/AuthContext';
 import { SelectedMonthProvider } from '@/src/context/SelectedMonthContext';
@@ -29,6 +29,7 @@ function TabIcon({
 }
 
 export default function AppLayout() {
+  const theme = useTheme();
   const { session, loading } = useAuth();
   useAndroidNavigationBarOnFocus();
 
@@ -39,7 +40,7 @@ export default function AppLayout() {
           flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: Theme.bgPrimary,
+          backgroundColor: theme.bgPrimary,
         }}>
         <LoadingLogo size={76} />
       </View>
@@ -63,8 +64,8 @@ export default function AppLayout() {
         tabBar={(props) => <FinTrackTabBar {...props} iosBlur={iosBlur} />}
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: Theme.accentPrimary,
-          tabBarInactiveTintColor: Theme.textMuted,
+          tabBarActiveTintColor: theme.accentPrimary,
+          tabBarInactiveTintColor: theme.textMuted,
           tabBarLabelStyle: {
             fontSize: 11,
             fontFamily: FontFamily.uiMedium,

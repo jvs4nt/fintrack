@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import {
   YearMonth,
@@ -23,6 +23,8 @@ function capitalize(text: string) {
 }
 
 export function MonthNavigator({ value, onChange, home }: MonthNavigatorProps) {
+  const theme = useTheme();
+  const styles = useStyles();
   const prev = shiftYearMonth(value, -1);
   const next = shiftYearMonth(value, 1);
   const canPrev = isNavigableYear(prev.year);
@@ -44,7 +46,7 @@ export function MonthNavigator({ value, onChange, home }: MonthNavigatorProps) {
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={`Mês anterior: ${formatYearMonth(prev)}`}>
-          <Ionicons name="chevron-back" size={20} color={Theme.accentPrimary} />
+          <Ionicons name="chevron-back" size={20} color={theme.accentPrimary} />
         </Pressable>
         <Text style={styles.label} accessibilityLiveRegion="polite" numberOfLines={1}>
           {capitalize(formatYearMonth(value))}
@@ -56,7 +58,7 @@ export function MonthNavigator({ value, onChange, home }: MonthNavigatorProps) {
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={`Próximo mês: ${formatYearMonth(next)}`}>
-          <Ionicons name="chevron-forward" size={20} color={Theme.accentPrimary} />
+          <Ionicons name="chevron-forward" size={20} color={theme.accentPrimary} />
         </Pressable>
       </View>
       {homeTarget ? (
@@ -66,7 +68,7 @@ export function MonthNavigator({ value, onChange, home }: MonthNavigatorProps) {
           hitSlop={6}
           accessibilityRole="button"
           accessibilityLabel={`Voltar para ${formatYearMonth(homeTarget)}`}>
-          <Ionicons name="return-down-back" size={14} color={Theme.accentPrimary} />
+          <Ionicons name="return-down-back" size={14} color={theme.accentPrimary} />
           <Text style={styles.homeText}>Mês atual</Text>
         </Pressable>
       ) : null}
@@ -74,55 +76,57 @@ export function MonthNavigator({ value, onChange, home }: MonthNavigatorProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    marginBottom: Theme.spacingLg,
-    gap: Theme.spacingSm,
-  },
-  bar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: Theme.spacingXs,
-  },
-  arrow: {
-    width: 40,
-    height: 40,
-    borderRadius: Theme.radiusMd,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  arrowPressed: {
-    backgroundColor: Theme.bgTertiary,
-    transform: [{ scale: 0.94 }],
-  },
-  disabled: { opacity: 0.35 },
-  label: {
-    flex: 1,
-    textAlign: 'center',
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 16,
-    color: Theme.textPrimary,
-  },
-  home: {
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: Theme.spacingMd,
-    borderRadius: 999,
-    backgroundColor: Theme.bgTertiary,
-    borderWidth: 1,
-    borderColor: Theme.border,
-  },
-  homePressed: { opacity: 0.7 },
-  homeText: {
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 13,
-    color: Theme.accentPrimary,
-  },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    wrap: {
+      marginBottom: theme.spacingLg,
+      gap: theme.spacingSm,
+    },
+    bar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: theme.spacingXs,
+    },
+    arrow: {
+      width: 40,
+      height: 40,
+      borderRadius: theme.radiusMd,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    arrowPressed: {
+      backgroundColor: theme.bgTertiary,
+      transform: [{ scale: 0.94 }],
+    },
+    disabled: { opacity: 0.35 },
+    label: {
+      flex: 1,
+      textAlign: 'center',
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+    home: {
+      alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 6,
+      paddingHorizontal: theme.spacingMd,
+      borderRadius: 999,
+      backgroundColor: theme.bgTertiary,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    homePressed: { opacity: 0.7 },
+    homeText: {
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 13,
+      color: theme.accentPrimary,
+    },
+  })
+);

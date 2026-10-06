@@ -1,5 +1,5 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 
 export type ChoiceOption<T extends string> = { id: T; label: string };
@@ -21,6 +21,7 @@ export function ChoiceModal<T extends string>({
   onPick,
   onCancel,
 }: Props<T>) {
+  const styles = useStyles();
   return (
     <Modal visible={visible} transparent animationType="fade">
       <Pressable style={styles.overlay} onPress={onCancel}>
@@ -41,49 +42,51 @@ export function ChoiceModal<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    justifyContent: 'center',
-    padding: Theme.spacingLg,
-  },
-  box: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: Theme.spacingLg,
-  },
-  title: {
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 18,
-    color: Theme.textPrimary,
-    marginBottom: Theme.spacingSm,
-  },
-  message: {
-    fontFamily: FontFamily.ui,
-    fontSize: 14,
-    color: Theme.textSecondary,
-    marginBottom: Theme.spacingMd,
-  },
-  option: {
-    paddingVertical: Theme.spacingMd,
-    borderTopWidth: 1,
-    borderTopColor: Theme.border,
-  },
-  optionText: {
-    fontFamily: FontFamily.ui,
-    fontSize: 16,
-    color: Theme.accentPrimary,
-  },
-  cancel: {
-    marginTop: Theme.spacingSm,
-    paddingVertical: Theme.spacingMd,
-    alignItems: 'center',
-  },
-  cancelText: {
-    fontFamily: FontFamily.ui,
-    color: Theme.textMuted,
-  },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: theme.overlay,
+      justifyContent: 'center',
+      padding: theme.spacingLg,
+    },
+    box: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: theme.spacingLg,
+    },
+    title: {
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 18,
+      color: theme.textPrimary,
+      marginBottom: theme.spacingSm,
+    },
+    message: {
+      fontFamily: FontFamily.ui,
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginBottom: theme.spacingMd,
+    },
+    option: {
+      paddingVertical: theme.spacingMd,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+    },
+    optionText: {
+      fontFamily: FontFamily.ui,
+      fontSize: 16,
+      color: theme.accentPrimary,
+    },
+    cancel: {
+      marginTop: theme.spacingSm,
+      paddingVertical: theme.spacingMd,
+      alignItems: 'center',
+    },
+    cancelText: {
+      fontFamily: FontFamily.ui,
+      color: theme.textMuted,
+    },
+  })
+);

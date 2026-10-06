@@ -14,7 +14,7 @@ import { CategoryPicker } from '@/components/CategoryPicker';
 import { ChoiceModal } from '@/components/ChoiceModal';
 import { SheetModal } from '@/components/SheetModal';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import { FEATURE_PAYMENTS } from '@/src/config/features';
 import { api } from '@/src/lib/api';
@@ -44,6 +44,8 @@ function formatBrl(n: number) {
 type PropagateCtx = { kind: 'income' | 'expense'; id: number } | null;
 
 export default function FixedScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [planYear, setPlanYear] = useState(new Date().getFullYear());
@@ -242,7 +244,7 @@ export default function FixedScreen() {
 
   return (
     <TabScreenTransition>
-    <View style={[styles.root, { paddingTop: insets.top + Theme.spacingMd }]}>
+    <View style={[styles.root, { paddingTop: insets.top + theme.spacingMd }]}>
       <Text style={styles.pageTitle}>Fixos</Text>
       <Text style={styles.pageSubtitle}>Ganhos e gastos recorrentes</Text>
       <View style={styles.warnBox}>
@@ -252,7 +254,7 @@ export default function FixedScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={Theme.accentPrimary} style={{ marginTop: 24 }} />
+        <ActivityIndicator color={theme.accentPrimary} style={{ marginTop: 24 }} />
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
           <View style={styles.sectionRow}>
@@ -276,7 +278,7 @@ export default function FixedScreen() {
           ))}
           {!fixedIncomes.length ? <Text style={styles.empty}>Nenhum ganho fixo</Text> : null}
 
-          <View style={[styles.sectionRow, { marginTop: Theme.spacingLg }]}>
+          <View style={[styles.sectionRow, { marginTop: theme.spacingLg }]}>
             <Text style={styles.h2}>Gastos fixos ({formatBrl(totalEx)})</Text>
             <Pressable style={styles.btnSm} onPress={() => openNew('expense')}>
               <Text style={styles.btnSmText}>+ Novo</Text>
@@ -297,11 +299,11 @@ export default function FixedScreen() {
           ))}
           {!fixedExpenses.length ? <Text style={styles.empty}>Nenhum gasto fixo</Text> : null}
 
-          <View style={[styles.card, { marginTop: Theme.spacingLg }]}>
+          <View style={[styles.card, { marginTop: theme.spacingLg }]}>
             <Text style={styles.h2}>Resumo mensal</Text>
             <Text style={styles.meta}>Ganhos: {formatBrl(totalIn)}</Text>
             <Text style={styles.meta}>Gastos: {formatBrl(totalEx)}</Text>
-            <Text style={[styles.meta, { color: Theme.accentPrimary, marginTop: 8 }]}>
+            <Text style={[styles.meta, { color: theme.accentPrimary, marginTop: 8 }]}>
               Líquido fixo: {formatBrl(totalIn - totalEx)}
             </Text>
           </View>
@@ -398,8 +400,10 @@ function FixedRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const border = tone === 'income' ? Theme.accentPrimary : Theme.accentDanger;
-  const color = tone === 'income' ? Theme.accentPrimary : Theme.accentDanger;
+  const theme = useTheme();
+  const styles = useStyles();
+  const border = tone === 'income' ? theme.accentPrimary : theme.accentDanger;
+  const color = tone === 'income' ? theme.accentPrimary : theme.accentDanger;
   return (
     <View style={[styles.card, { opacity: active ? 1 : 0.55, borderLeftWidth: 4, borderLeftColor: border }]}>
       <Text style={styles.entryName}>
@@ -417,105 +421,107 @@ function FixedRow({
           <Text style={styles.link}>Editar</Text>
         </Pressable>
         <Pressable onPress={onDelete}>
-          <Text style={[styles.link, { color: Theme.accentDanger }]}>Excluir</Text>
+          <Text style={[styles.link, { color: theme.accentDanger }]}>Excluir</Text>
         </Pressable>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Theme.bgPrimary, paddingHorizontal: Theme.spacingLg },
-  pageTitle: { fontFamily: FontFamily.uiSemiBold, fontSize: 26, color: Theme.textPrimary },
-  pageSubtitle: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.textSecondary, marginTop: 4 },
-  warnBox: {
-    backgroundColor: Theme.bgTertiary,
-    padding: Theme.spacingMd,
-    borderRadius: Theme.radiusMd,
-    marginTop: Theme.spacingMd,
-    marginBottom: Theme.spacingMd,
-  },
-  warnText: { fontFamily: FontFamily.ui, fontSize: 13, color: Theme.textSecondary },
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacingSm },
-  h2: { fontFamily: FontFamily.uiSemiBold, fontSize: 16, color: Theme.textPrimary, flex: 1 },
-  btnSm: { backgroundColor: Theme.accentPrimary, paddingHorizontal: Theme.spacingMd, paddingVertical: Theme.spacingSm, borderRadius: Theme.radiusMd },
-  btnSmText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: Theme.bgPrimary },
-  card: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: Theme.spacingMd,
-    marginBottom: Theme.spacingSm,
-  },
-  entryName: { fontFamily: FontFamily.uiSemiBold, fontSize: 15, color: Theme.textPrimary },
-  inactive: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textMuted },
-  meta: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textMuted, marginTop: 4 },
-  amount: { fontFamily: FontFamily.displayBold, fontSize: 16, marginTop: 6 },
-  rowActions: { flexDirection: 'row', alignItems: 'center', gap: Theme.spacingMd, marginTop: Theme.spacingSm, flexWrap: 'wrap' },
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  small: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textSecondary },
-  link: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.accentPrimary },
-  empty: { fontFamily: FontFamily.ui, color: Theme.textMuted, marginBottom: Theme.spacingMd },
-  label: { fontFamily: FontFamily.uiMedium, fontSize: 13, color: Theme.textSecondary, marginBottom: 4 },
-  input: {
-    fontFamily: FontFamily.ui,
-    fontSize: 16,
-    color: Theme.textPrimary,
-    backgroundColor: Theme.bgTertiary,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    padding: Theme.spacingMd,
-    marginBottom: Theme.spacingSm,
-  },
-  catListBox: {
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    backgroundColor: Theme.bgTertiary,
-    marginBottom: Theme.spacingSm,
-    overflow: 'hidden',
-  },
-  catRow: { paddingVertical: Theme.spacingSm, paddingHorizontal: Theme.spacingSm, borderBottomWidth: 1, borderBottomColor: Theme.border },
-  catRowActive: { backgroundColor: Theme.bgSecondary },
-  catText: { fontFamily: FontFamily.ui, color: Theme.textPrimary },
-  catEmptyBox: {
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    padding: Theme.spacingMd,
-    marginBottom: Theme.spacingSm,
-    backgroundColor: Theme.bgTertiary,
-  },
-  catEmptyText: { fontFamily: FontFamily.ui, fontSize: 13, color: Theme.textSecondary, marginBottom: Theme.spacingSm },
-  btnAddCat: {
-    marginTop: Theme.spacingSm,
-    alignSelf: 'flex-start',
-    backgroundColor: Theme.accentPrimary,
-    paddingHorizontal: Theme.spacingMd,
-    paddingVertical: Theme.spacingSm,
-    borderRadius: Theme.radiusMd,
-  },
-  btnAddCatText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: Theme.bgPrimary },
-  pmChip: {
-    paddingHorizontal: Theme.spacingMd,
-    paddingVertical: Theme.spacingSm,
-    marginRight: Theme.spacingSm,
-    borderRadius: Theme.radiusMd,
-    borderWidth: 1,
-    borderColor: Theme.border,
-  },
-  pmChipActive: { borderColor: Theme.accentPrimary },
-  pmText: { fontFamily: FontFamily.ui, fontSize: 13, color: Theme.textSecondary },
-  pmTextActive: { color: Theme.accentPrimary },
-  btnGhost: { paddingHorizontal: Theme.spacingLg, paddingVertical: Theme.spacingMd },
-  btnGhostText: { fontFamily: FontFamily.ui, color: Theme.textSecondary },
-  btnPrimary: {
-    backgroundColor: Theme.accentPrimary,
-    paddingHorizontal: Theme.spacingLg,
-    paddingVertical: Theme.spacingMd,
-    borderRadius: Theme.radiusMd,
-  },
-  btnPrimaryText: { fontFamily: FontFamily.uiSemiBold, color: Theme.bgPrimary },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: theme.bgPrimary, paddingHorizontal: theme.spacingLg },
+    pageTitle: { fontFamily: FontFamily.uiSemiBold, fontSize: 26, color: theme.textPrimary },
+    pageSubtitle: { fontFamily: FontFamily.ui, fontSize: 14, color: theme.textSecondary, marginTop: 4 },
+    warnBox: {
+      backgroundColor: theme.bgTertiary,
+      padding: theme.spacingMd,
+      borderRadius: theme.radiusMd,
+      marginTop: theme.spacingMd,
+      marginBottom: theme.spacingMd,
+    },
+    warnText: { fontFamily: FontFamily.ui, fontSize: 13, color: theme.textSecondary },
+    sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacingSm },
+    h2: { fontFamily: FontFamily.uiSemiBold, fontSize: 16, color: theme.textPrimary, flex: 1 },
+    btnSm: { backgroundColor: theme.accentPrimary, paddingHorizontal: theme.spacingMd, paddingVertical: theme.spacingSm, borderRadius: theme.radiusMd },
+    btnSmText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: theme.onAccent },
+    card: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: theme.spacingMd,
+      marginBottom: theme.spacingSm,
+    },
+    entryName: { fontFamily: FontFamily.uiSemiBold, fontSize: 15, color: theme.textPrimary },
+    inactive: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textMuted },
+    meta: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textMuted, marginTop: 4 },
+    amount: { fontFamily: FontFamily.displayBold, fontSize: 16, marginTop: 6 },
+    rowActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacingMd, marginTop: theme.spacingSm, flexWrap: 'wrap' },
+    switchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    small: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textSecondary },
+    link: { fontFamily: FontFamily.ui, fontSize: 14, color: theme.accentPrimary },
+    empty: { fontFamily: FontFamily.ui, color: theme.textMuted, marginBottom: theme.spacingMd },
+    label: { fontFamily: FontFamily.uiMedium, fontSize: 13, color: theme.textSecondary, marginBottom: 4 },
+    input: {
+      fontFamily: FontFamily.ui,
+      fontSize: 16,
+      color: theme.textPrimary,
+      backgroundColor: theme.bgTertiary,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      padding: theme.spacingMd,
+      marginBottom: theme.spacingSm,
+    },
+    catListBox: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      backgroundColor: theme.bgTertiary,
+      marginBottom: theme.spacingSm,
+      overflow: 'hidden',
+    },
+    catRow: { paddingVertical: theme.spacingSm, paddingHorizontal: theme.spacingSm, borderBottomWidth: 1, borderBottomColor: theme.border },
+    catRowActive: { backgroundColor: theme.bgSecondary },
+    catText: { fontFamily: FontFamily.ui, color: theme.textPrimary },
+    catEmptyBox: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      padding: theme.spacingMd,
+      marginBottom: theme.spacingSm,
+      backgroundColor: theme.bgTertiary,
+    },
+    catEmptyText: { fontFamily: FontFamily.ui, fontSize: 13, color: theme.textSecondary, marginBottom: theme.spacingSm },
+    btnAddCat: {
+      marginTop: theme.spacingSm,
+      alignSelf: 'flex-start',
+      backgroundColor: theme.accentPrimary,
+      paddingHorizontal: theme.spacingMd,
+      paddingVertical: theme.spacingSm,
+      borderRadius: theme.radiusMd,
+    },
+    btnAddCatText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: theme.onAccent },
+    pmChip: {
+      paddingHorizontal: theme.spacingMd,
+      paddingVertical: theme.spacingSm,
+      marginRight: theme.spacingSm,
+      borderRadius: theme.radiusMd,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    pmChipActive: { borderColor: theme.accentPrimary },
+    pmText: { fontFamily: FontFamily.ui, fontSize: 13, color: theme.textSecondary },
+    pmTextActive: { color: theme.accentPrimary },
+    btnGhost: { paddingHorizontal: theme.spacingLg, paddingVertical: theme.spacingMd },
+    btnGhostText: { fontFamily: FontFamily.ui, color: theme.textSecondary },
+    btnPrimary: {
+      backgroundColor: theme.accentPrimary,
+      paddingHorizontal: theme.spacingLg,
+      paddingVertical: theme.spacingMd,
+      borderRadius: theme.radiusMd,
+    },
+    btnPrimaryText: { fontFamily: FontFamily.uiSemiBold, color: theme.onAccent },
+  })
+);

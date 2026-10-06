@@ -1,9 +1,10 @@
 import { Link, Stack } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 
 export default function NotFoundScreen() {
+  const styles = useStyles();
   return (
     <>
       <Stack.Screen options={{ title: 'Ops' }} />
@@ -17,26 +18,28 @@ export default function NotFoundScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-    backgroundColor: Theme.bgPrimary,
-  },
-  title: {
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 18,
-    color: Theme.textPrimary,
-  },
-  link: {
-    marginTop: 16,
-    paddingVertical: 12,
-  },
-  linkText: {
-    fontFamily: FontFamily.ui,
-    fontSize: 15,
-    color: Theme.accentPrimary,
-  },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20,
+      backgroundColor: theme.bgPrimary,
+    },
+    title: {
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 18,
+      color: theme.textPrimary,
+    },
+    link: {
+      marginTop: 16,
+      paddingVertical: 12,
+    },
+    linkText: {
+      fontFamily: FontFamily.ui,
+      fontSize: 15,
+      color: theme.accentPrimary,
+    },
+  })
+);

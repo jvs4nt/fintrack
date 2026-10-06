@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SheetModal } from '@/components/SheetModal';
 import { TabScreenTransition } from '@/components/TabScreenTransition';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import { api } from '@/src/lib/api';
 import { confirmDestructive, toastMessage } from '@/src/utils/alerts';
@@ -43,6 +43,8 @@ function installmentUsedOnCard(cardId: number, installments: Installment[]): num
 }
 
 export default function CardsScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [cards, setCards] = useState<Card[]>([]);
@@ -145,12 +147,12 @@ export default function CardsScreen() {
 
   return (
     <TabScreenTransition>
-    <View style={[styles.root, { paddingTop: insets.top + Theme.spacingMd }]}>
+    <View style={[styles.root, { paddingTop: insets.top + theme.spacingMd }]}>
       <Text style={styles.title}>Cartões</Text>
       <Text style={styles.sub}>Crédito e parcelamentos</Text>
 
       {loading ? (
-        <ActivityIndicator color={Theme.accentPrimary} style={{ marginTop: 24 }} />
+        <ActivityIndicator color={theme.accentPrimary} style={{ marginTop: 24 }} />
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
           <View style={styles.rowBetween}>
@@ -196,7 +198,7 @@ export default function CardsScreen() {
                     style={[
                       styles.limitFill,
                       { width: `${Math.min(pct, 100)}%` },
-                      pct > 80 ? { backgroundColor: Theme.accentDanger } : pct > 50 ? { backgroundColor: Theme.accentWarning } : { backgroundColor: Theme.accentPrimary },
+                      pct > 80 ? { backgroundColor: theme.accentDanger } : pct > 50 ? { backgroundColor: theme.accentWarning } : { backgroundColor: theme.accentPrimary },
                     ]}
                   />
                 </View>
@@ -217,7 +219,7 @@ export default function CardsScreen() {
                     <Text style={styles.link}>Editar</Text>
                   </Pressable>
                   <Pressable onPress={() => deleteCard(card.id)}>
-                    <Text style={[styles.link, { color: Theme.accentDanger }]}>Excluir</Text>
+                    <Text style={[styles.link, { color: theme.accentDanger }]}>Excluir</Text>
                   </Pressable>
                 </View>
               </View>
@@ -225,7 +227,7 @@ export default function CardsScreen() {
           })}
           {!cards.length ? <Text style={styles.empty}>Nenhum cartão</Text> : null}
 
-          <View style={[styles.rowBetween, { marginTop: Theme.spacingLg }]}>
+          <View style={[styles.rowBetween, { marginTop: theme.spacingLg }]}>
             <Text style={styles.h2}>Parcelamentos</Text>
             {cards.length > 0 ? (
               <Pressable
@@ -250,7 +252,7 @@ export default function CardsScreen() {
             const per = inst.totalAmount / inst.totalInstallments;
             const progress = (inst.currentInstallment / inst.totalInstallments) * 100;
             return (
-              <View key={inst.id} style={[styles.instCard, { borderLeftColor: Theme.accentWarning }]}>
+              <View key={inst.id} style={[styles.instCard, { borderLeftColor: theme.accentWarning }]}>
                 <Text style={styles.cardName}>{inst.description}</Text>
                 <Text style={styles.cardDigits}>
                   {inst.card?.name} · {inst.currentInstallment}/{inst.totalInstallments}
@@ -259,7 +261,7 @@ export default function CardsScreen() {
                   <View style={[styles.miniFill, { width: `${progress}%` }]} />
                 </View>
                 <View style={styles.instRow}>
-                  <Text style={{ fontFamily: FontFamily.displayBold, color: Theme.accentWarning }}>
+                  <Text style={{ fontFamily: FontFamily.displayBold, color: theme.accentWarning }}>
                     {formatBrl(per)}/mês
                   </Text>
                   <Text style={styles.cardDigits}>Total {formatBrl(inst.totalAmount)}</Text>
@@ -280,7 +282,7 @@ export default function CardsScreen() {
                     <Text style={styles.link}>Editar</Text>
                   </Pressable>
                   <Pressable onPress={() => deleteInst(inst.id)}>
-                    <Text style={[styles.link, { color: Theme.accentDanger }]}>Excluir</Text>
+                    <Text style={[styles.link, { color: theme.accentDanger }]}>Excluir</Text>
                   </Pressable>
                 </View>
               </View>
@@ -371,6 +373,8 @@ function Field({
   maxLength?: number;
   placeholder?: string;
 }) {
+  const theme = useTheme();
+  const styles = useStyles();
   return (
     <>
       <Text style={styles.label}>{label}</Text>
@@ -381,71 +385,73 @@ function Field({
         keyboardType={keyboardType}
         maxLength={maxLength}
         placeholder={placeholder}
-        placeholderTextColor={Theme.textMuted}
+        placeholderTextColor={theme.textMuted}
       />
     </>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Theme.bgPrimary, paddingHorizontal: Theme.spacingLg },
-  title: { fontFamily: FontFamily.uiSemiBold, fontSize: 26, color: Theme.textPrimary },
-  sub: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.textSecondary, marginTop: 4 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Theme.spacingSm },
-  h2: { fontFamily: FontFamily.uiSemiBold, fontSize: 17, color: Theme.textPrimary },
-  btnSm: { backgroundColor: Theme.accentPrimary, paddingHorizontal: Theme.spacingMd, paddingVertical: Theme.spacingSm, borderRadius: Theme.radiusMd },
-  btnSmText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: Theme.bgPrimary },
-  cardVisual: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderLeftWidth: 4,
-    padding: Theme.spacingLg,
-    marginBottom: Theme.spacingMd,
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  cardName: { fontFamily: FontFamily.uiSemiBold, fontSize: 16, color: Theme.textPrimary },
-  cardDigits: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textMuted, marginTop: 4 },
-  cardLimit: { fontFamily: FontFamily.displayBold, color: Theme.accentPrimary },
-  cardNumber: { fontFamily: FontFamily.displayBold, fontSize: 14, color: Theme.textSecondary, marginTop: Theme.spacingMd },
-  cardDates: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textMuted, marginTop: 8 },
-  badge: { alignSelf: 'flex-start', backgroundColor: Theme.accentDangerDark, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, marginTop: 8 },
-  badgeText: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textPrimary },
-  usedLabel: { fontFamily: FontFamily.ui, fontSize: 12, color: Theme.textSecondary, marginTop: Theme.spacingMd },
-  limitBar: { height: 6, backgroundColor: Theme.bgTertiary, borderRadius: 3, marginTop: 4, overflow: 'hidden' },
-  limitFill: { height: '100%', borderRadius: 3 },
-  cardActions: { flexDirection: 'row', gap: Theme.spacingLg, marginTop: Theme.spacingMd },
-  link: { fontFamily: FontFamily.ui, fontSize: 14, color: Theme.accentPrimary },
-  empty: { fontFamily: FontFamily.ui, color: Theme.textMuted, marginVertical: Theme.spacingMd },
-  instCard: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderLeftWidth: 4,
-    padding: Theme.spacingMd,
-    marginBottom: Theme.spacingSm,
-  },
-  miniBar: { height: 4, backgroundColor: Theme.bgTertiary, borderRadius: 2, marginTop: 8 },
-  miniFill: { height: 4, backgroundColor: Theme.accentWarning, borderRadius: 2 },
-  instRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  label: { fontFamily: FontFamily.uiMedium, fontSize: 13, color: Theme.textSecondary, marginBottom: 4 },
-  input: {
-    fontFamily: FontFamily.ui,
-    fontSize: 16,
-    color: Theme.textPrimary,
-    backgroundColor: Theme.bgTertiary,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Theme.radiusMd,
-    padding: Theme.spacingMd,
-    marginBottom: Theme.spacingSm,
-  },
-  colorDot: { width: 32, height: 32, borderRadius: 16, marginRight: 10, borderWidth: 2, borderColor: 'transparent' },
-  colorDotActive: { borderColor: Theme.textPrimary },
-  catRow: { paddingVertical: Theme.spacingSm, borderBottomWidth: 1, borderBottomColor: Theme.border },
-  catRowActive: { backgroundColor: Theme.bgTertiary },
-  btnGhost: { paddingHorizontal: Theme.spacingLg, paddingVertical: Theme.spacingMd },
-  muted: { fontFamily: FontFamily.ui, color: Theme.textMuted },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: theme.bgPrimary, paddingHorizontal: theme.spacingLg },
+    title: { fontFamily: FontFamily.uiSemiBold, fontSize: 26, color: theme.textPrimary },
+    sub: { fontFamily: FontFamily.ui, fontSize: 14, color: theme.textSecondary, marginTop: 4 },
+    rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacingSm },
+    h2: { fontFamily: FontFamily.uiSemiBold, fontSize: 17, color: theme.textPrimary },
+    btnSm: { backgroundColor: theme.accentPrimary, paddingHorizontal: theme.spacingMd, paddingVertical: theme.spacingSm, borderRadius: theme.radiusMd },
+    btnSmText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: theme.onAccent },
+    cardVisual: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderLeftWidth: 4,
+      padding: theme.spacingLg,
+      marginBottom: theme.spacingMd,
+    },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
+    cardName: { fontFamily: FontFamily.uiSemiBold, fontSize: 16, color: theme.textPrimary },
+    cardDigits: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textMuted, marginTop: 4 },
+    cardLimit: { fontFamily: FontFamily.displayBold, color: theme.accentPrimary },
+    cardNumber: { fontFamily: FontFamily.displayBold, fontSize: 14, color: theme.textSecondary, marginTop: theme.spacingMd },
+    cardDates: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textMuted, marginTop: 8 },
+    badge: { alignSelf: 'flex-start', backgroundColor: theme.accentDangerDark, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, marginTop: 8 },
+    badgeText: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textPrimary },
+    usedLabel: { fontFamily: FontFamily.ui, fontSize: 12, color: theme.textSecondary, marginTop: theme.spacingMd },
+    limitBar: { height: 6, backgroundColor: theme.bgTertiary, borderRadius: 3, marginTop: 4, overflow: 'hidden' },
+    limitFill: { height: '100%', borderRadius: 3 },
+    cardActions: { flexDirection: 'row', gap: theme.spacingLg, marginTop: theme.spacingMd },
+    link: { fontFamily: FontFamily.ui, fontSize: 14, color: theme.accentPrimary },
+    empty: { fontFamily: FontFamily.ui, color: theme.textMuted, marginVertical: theme.spacingMd },
+    instCard: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderLeftWidth: 4,
+      padding: theme.spacingMd,
+      marginBottom: theme.spacingSm,
+    },
+    miniBar: { height: 4, backgroundColor: theme.bgTertiary, borderRadius: 2, marginTop: 8 },
+    miniFill: { height: 4, backgroundColor: theme.accentWarning, borderRadius: 2 },
+    instRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+    label: { fontFamily: FontFamily.uiMedium, fontSize: 13, color: theme.textSecondary, marginBottom: 4 },
+    input: {
+      fontFamily: FontFamily.ui,
+      fontSize: 16,
+      color: theme.textPrimary,
+      backgroundColor: theme.bgTertiary,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.radiusMd,
+      padding: theme.spacingMd,
+      marginBottom: theme.spacingSm,
+    },
+    colorDot: { width: 32, height: 32, borderRadius: 16, marginRight: 10, borderWidth: 2, borderColor: 'transparent' },
+    colorDotActive: { borderColor: theme.textPrimary },
+    catRow: { paddingVertical: theme.spacingSm, borderBottomWidth: 1, borderBottomColor: theme.border },
+    catRowActive: { backgroundColor: theme.bgTertiary },
+    btnGhost: { paddingHorizontal: theme.spacingLg, paddingVertical: theme.spacingMd },
+    muted: { fontFamily: FontFamily.ui, color: theme.textMuted },
+  })
+);

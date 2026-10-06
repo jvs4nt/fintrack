@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Polyline, Text as SvgText } from 'react-native-svg';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import type { DashboardSummary } from '@/src/types';
 
@@ -16,7 +16,9 @@ const PAD_T = 12;
 const PAD_B = 28;
 
 export function SixMonthLines({ data, height = 160 }: Props) {
-  const chartW = Dimensions.get('window').width - Theme.spacingLg * 2;
+  const theme = useTheme();
+  const styles = useStyles();
+  const chartW = Dimensions.get('window').width - theme.spacingLg * 2;
 
   const layout = useMemo(() => {
     if (!data?.length) return null;
@@ -54,11 +56,11 @@ export function SixMonthLines({ data, height = 160 }: Props) {
     <View style={styles.wrap}>
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendSwatch, { backgroundColor: Theme.accentPrimary }]} />
+          <View style={[styles.legendSwatch, { backgroundColor: theme.accentPrimary }]} />
           <Text style={styles.legendText}>Ganhos</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendSwatch, { backgroundColor: Theme.accentDanger }]} />
+          <View style={[styles.legendSwatch, { backgroundColor: theme.accentDanger }]} />
           <Text style={styles.legendText}>Gastos</Text>
         </View>
       </View>
@@ -68,13 +70,13 @@ export function SixMonthLines({ data, height = 160 }: Props) {
           y1={layout.baseY}
           x2={PAD_L + layout.plotW}
           y2={layout.baseY}
-          stroke={Theme.border}
+          stroke={theme.border}
           strokeWidth={1}
         />
         <Polyline
           points={layout.incomePolyline}
           fill="none"
-          stroke={Theme.accentPrimary}
+          stroke={theme.accentPrimary}
           strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -82,7 +84,7 @@ export function SixMonthLines({ data, height = 160 }: Props) {
         <Polyline
           points={layout.expensePolyline}
           fill="none"
-          stroke={Theme.accentDanger}
+          stroke={theme.accentDanger}
           strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -93,18 +95,18 @@ export function SixMonthLines({ data, height = 160 }: Props) {
               cx={layout.incomePoints[i].x}
               cy={layout.incomePoints[i].y}
               r={4}
-              fill={Theme.accentPrimary}
+              fill={theme.accentPrimary}
             />
             <Circle
               cx={layout.expensePoints[i].x}
               cy={layout.expensePoints[i].y}
               r={4}
-              fill={Theme.accentDanger}
+              fill={theme.accentDanger}
             />
             <SvgText
               x={layout.incomePoints[i].x}
               y={height - 6}
-              fill={Theme.textMuted}
+              fill={theme.textMuted}
               fontSize={10}
               textAnchor="middle"
               fontFamily={FontFamily.ui}>
@@ -117,28 +119,30 @@ export function SixMonthLines({ data, height = 160 }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    marginVertical: Theme.spacingMd,
-  },
-  legend: {
-    flexDirection: 'row',
-    gap: Theme.spacingLg,
-    marginBottom: Theme.spacingSm,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Theme.spacingSm,
-  },
-  legendSwatch: {
-    width: 24,
-    height: 3,
-    borderRadius: 2,
-  },
-  legendText: {
-    fontFamily: FontFamily.ui,
-    fontSize: 12,
-    color: Theme.textSecondary,
-  },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    wrap: {
+      marginVertical: theme.spacingMd,
+    },
+    legend: {
+      flexDirection: 'row',
+      gap: theme.spacingLg,
+      marginBottom: theme.spacingSm,
+    },
+    legendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: theme.spacingSm,
+    },
+    legendSwatch: {
+      width: 24,
+      height: 3,
+      borderRadius: 2,
+    },
+    legendText: {
+      fontFamily: FontFamily.ui,
+      fontSize: 12,
+      color: theme.textSecondary,
+    },
+  })
+);

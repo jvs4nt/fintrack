@@ -1,25 +1,31 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { MonthNavigator } from '@/components/MonthNavigator';
 import { PageShell } from '@/components/PageShell';
 import { SixMonthLines } from '@/components/SixMonthLines';
-import { Theme } from '@/constants/Colors';
+import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import { FEATURE_PAYMENTS } from '@/src/config/features';
 import { useSelectedMonth } from '@/src/context/SelectedMonthContext';
 import { api } from '@/src/lib/api';
 import type { DashboardSummary, MonthEntry } from '@/src/types';
 
+const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
 function formatBrl(n: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
+  return currencyFormatter.format(n);
 }
 
 export default function DashboardScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const { selected, setSelected, planning, ready } = useSelectedMonth();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [focusCount, setFocusCount] = useState(0);
   const requestId = useRef(0);
   const { year, month } = selected;
 
@@ -46,6 +52,12 @@ export default function DashboardScreen() {
     }, [load])
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      setFocusCount((count) => count + 1);
+    }, [])
+  );
+
   const navigator = <MonthNavigator value={selected} onChange={setSelected} home={planning} />;
 
   if (error && !summary) {
@@ -65,7 +77,7 @@ export default function DashboardScreen() {
       <PageShell title="Dashboard">
         {navigator}
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={Theme.accentPrimary} />
+          <ActivityIndicator size="large" color={theme.accentPrimary} />
         </View>
       </PageShell>
     );
@@ -85,7 +97,7 @@ export default function DashboardScreen() {
           disabled={loading}
           hitSlop={8}>
           {loading ? (
-            <ActivityIndicator size="small" color={Theme.accentPrimary} />
+            <ActivityIndicator size="small" color={theme.accentPrimary} />
           ) : (
             <Text style={styles.headerRefreshText}>Atualizar</Text>
           )}
@@ -100,14 +112,18 @@ export default function DashboardScreen() {
           style={[
             styles.card,
             styles.cardHighlight,
-            { borderLeftColor: monthBalance >= 0 ? Theme.accentPrimary : Theme.accentDanger },
+            { borderLeftColor: monthBalance >= 0 ? theme.accentPrimary : theme.accentDanger },
           ]}>
           <Text style={styles.statLabel}>
             {FEATURE_PAYMENTS ? 'Saldo líquido do mês (c/ parcelas)' : 'Saldo do mês'}
           </Text>
-          <Text style={[styles.heroValue, { color: monthBalance >= 0 ? Theme.accentPrimary : Theme.accentDanger }]}>
-            {formatBrl(monthBalance)}
-          </Text>
+          <AnimatedNumber
+            value={monthBalance}
+            format={formatBrl}
+            duration={1200}
+            replayKey={focusCount}
+            style={[styles.heroValue, { color: monthBalance >= 0 ? theme.accentPrimary : theme.accentDanger }]}
+          />
           <Text style={styles.muted}>
             Ganhos {formatBrl(s.totalIncome)} · Gastos {formatBrl(s.totalExpense)}
             {FEATURE_PAYMENTS ? ` · Parcelas ${formatBrl(s.totalInstallments)}` : ''}
@@ -115,12 +131,26 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.grid}>
-          <StatMini label="Total ganhos" value={formatBrl(s.totalIncome)} color={Theme.accentPrimary} />
-          <StatMini label="Total gastos" value={formatBrl(s.totalExpense)} color={Theme.accentDanger} />
+          <StatMini
+            label="Total ganhos"
+            value={s.totalIncome}
+            color={theme.accentPrimary}
+            delay={100}
+            replayKey={focusCount}
+          />
+          <StatMini
+            label="Total gastos"
+            value={s.totalExpense}
+            color={theme.accentDanger}
+            delay={200}
+            replayKey={focusCount}
+          />
           <StatMini
             label="Saldo"
-            value={formatBrl(s.balance)}
-            color={s.balance >= 0 ? Theme.accentPrimary : Theme.accentDanger}
+            value={s.balance}
+            color={s.balance >= 0 ? theme.accentPrimary : theme.accentDanger}
+            delay={300}
+            replayKey={focusCount}
           />
           {FEATURE_PAYMENTS ? (
             <View style={styles.statCard}>
@@ -128,7 +158,7 @@ export default function DashboardScreen() {
               {nextDueCard ? (
                 <>
                   <Text style={styles.statMid}>{nextDueCard.name}</Text>
-                  <Text style={[styles.muted, nextDueCard.daysUntilDue <= 5 && { color: Theme.accentDanger }]}>
+                  <Text style={[styles.muted, nextDueCard.daysUntilDue <= 5 && { color: theme.accentDanger }]}>
                     {nextDueCard.daysUntilDue <= 5 ? `⚠ ${nextDueCard.daysUntilDue} dias` : `${nextDueCard.daysUntilDue} dias`}
                   </Text>
                 </>
@@ -151,7 +181,7 @@ export default function DashboardScreen() {
                       {inst.card?.name ?? '—'} · {inst.currentMonthInstallment}/{inst.totalInstallments}
                     </Text>
                   </View>
-                  <Text style={{ fontFamily: FontFamily.displayBold, color: Theme.accentWarning }}>
+                  <Text style={{ fontFamily: FontFamily.displayBold, color: theme.accentWarning }}>
                     {formatBrl(inst.installmentAmount)}
                   </Text>
                 </View>
@@ -180,7 +210,7 @@ export default function DashboardScreen() {
                   <Text
                     style={{
                       fontFamily: FontFamily.displayBold,
-                      color: entry.type === 'income' ? Theme.accentPrimary : Theme.accentDanger,
+                      color: entry.type === 'income' ? theme.accentPrimary : theme.accentDanger,
                     }}>
                     {entry.type === 'income' ? '+' : '-'} {formatBrl(entry.amount)}
                   </Text>
@@ -196,112 +226,129 @@ export default function DashboardScreen() {
   );
 }
 
-function StatMini({ label, value, color }: { label: string; value: string; color: string }) {
+type StatMiniProps = {
+  label: string;
+  value: number;
+  color: string;
+  delay: number;
+  replayKey: number;
+};
+
+function StatMini({ label, value, color, delay, replayKey }: StatMiniProps) {
+  const styles = useStyles();
   return (
     <View style={styles.statCard}>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statMid, { color }]}>{value}</Text>
+      <AnimatedNumber
+        value={value}
+        format={formatBrl}
+        delay={delay}
+        replayKey={replayKey}
+        style={[styles.statMid, { color }]}
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  center: {
-    paddingVertical: Theme.spacingXl * 2,
-    alignItems: 'center',
-  },
-  refreshing: { opacity: 0.55 },
-  err: {
-    fontFamily: FontFamily.ui,
-    color: Theme.accentDanger,
-    marginBottom: Theme.spacingMd,
-  },
-  retry: {
-    alignSelf: 'flex-start',
-    marginTop: Theme.spacingMd,
-    paddingVertical: Theme.spacingSm,
-    paddingHorizontal: Theme.spacingMd,
-    borderRadius: Theme.radiusMd,
-    borderWidth: 1,
-    borderColor: Theme.accentPrimary,
-  },
-  retryText: { fontFamily: FontFamily.uiSemiBold, color: Theme.accentPrimary },
-  headerRefresh: {
-    paddingVertical: Theme.spacingSm,
-    paddingHorizontal: Theme.spacingMd,
-    borderRadius: Theme.radiusMd,
-    borderWidth: 1,
-    borderColor: Theme.accentPrimary,
-    minWidth: 96,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerRefreshDisabled: { opacity: 0.65 },
-  headerRefreshText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: Theme.accentPrimary },
-  card: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: Theme.spacingLg,
-    marginBottom: Theme.spacingLg,
-  },
-  cardHighlight: { borderLeftWidth: 4 },
-  statLabel: {
-    fontFamily: FontFamily.ui,
-    fontSize: 13,
-    color: Theme.textSecondary,
-  },
-  heroValue: {
-    fontFamily: FontFamily.displayBold,
-    fontSize: 30,
-    marginVertical: Theme.spacingSm,
-  },
-  muted: {
-    fontFamily: FontFamily.ui,
-    fontSize: 12,
-    color: Theme.textMuted,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Theme.spacingSm,
-    marginBottom: Theme.spacingLg,
-  },
-  statCard: {
-    width: '48%',
-    flexGrow: 1,
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: Theme.spacingMd,
-    minWidth: 140,
-  },
-  statMid: { fontFamily: FontFamily.displayBold, fontSize: 16, marginTop: 6, color: Theme.textPrimary },
-  sectionTitle: {
-    fontFamily: FontFamily.uiSemiBold,
-    fontSize: 16,
-    color: Theme.textPrimary,
-    marginBottom: Theme.spacingSm,
-    marginTop: Theme.spacingSm,
-  },
-  tableCard: {
-    backgroundColor: Theme.bgSecondary,
-    borderRadius: Theme.radiusLg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: Theme.spacingMd,
-    marginBottom: Theme.spacingMd,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingVertical: Theme.spacingSm,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.border,
-  },
-  cellMain: { fontFamily: FontFamily.uiSemiBold, fontSize: 14, color: Theme.textPrimary },
-  fixTag: { fontFamily: FontFamily.ui, fontSize: 11, color: Theme.textSecondary },
-});
+const useStyles = createThemedStyles((theme) =>
+  StyleSheet.create({
+    center: {
+      paddingVertical: theme.spacingXl * 2,
+      alignItems: 'center',
+    },
+    refreshing: { opacity: 0.55 },
+    err: {
+      fontFamily: FontFamily.ui,
+      color: theme.accentDanger,
+      marginBottom: theme.spacingMd,
+    },
+    retry: {
+      alignSelf: 'flex-start',
+      marginTop: theme.spacingMd,
+      paddingVertical: theme.spacingSm,
+      paddingHorizontal: theme.spacingMd,
+      borderRadius: theme.radiusMd,
+      borderWidth: 1,
+      borderColor: theme.accentPrimary,
+    },
+    retryText: { fontFamily: FontFamily.uiSemiBold, color: theme.accentPrimary },
+    headerRefresh: {
+      paddingVertical: theme.spacingSm,
+      paddingHorizontal: theme.spacingMd,
+      borderRadius: theme.radiusMd,
+      borderWidth: 1,
+      borderColor: theme.accentPrimary,
+      minWidth: 96,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerRefreshDisabled: { opacity: 0.65 },
+    headerRefreshText: { fontFamily: FontFamily.uiSemiBold, fontSize: 13, color: theme.accentPrimary },
+    card: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: theme.spacingLg,
+      marginBottom: theme.spacingLg,
+    },
+    cardHighlight: { borderLeftWidth: 4 },
+    statLabel: {
+      fontFamily: FontFamily.ui,
+      fontSize: 13,
+      color: theme.textSecondary,
+    },
+    heroValue: {
+      fontFamily: FontFamily.displayBold,
+      fontSize: 30,
+      marginVertical: theme.spacingSm,
+    },
+    muted: {
+      fontFamily: FontFamily.ui,
+      fontSize: 12,
+      color: theme.textMuted,
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: theme.spacingSm,
+      marginBottom: theme.spacingLg,
+    },
+    statCard: {
+      width: '48%',
+      flexGrow: 1,
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: theme.spacingMd,
+      minWidth: 140,
+    },
+    statMid: { fontFamily: FontFamily.displayBold, fontSize: 16, marginTop: 6, color: theme.textPrimary },
+    sectionTitle: {
+      fontFamily: FontFamily.uiSemiBold,
+      fontSize: 16,
+      color: theme.textPrimary,
+      marginBottom: theme.spacingSm,
+      marginTop: theme.spacingSm,
+    },
+    tableCard: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: theme.radiusLg,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: theme.spacingMd,
+      marginBottom: theme.spacingMd,
+    },
+    tableRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      paddingVertical: theme.spacingSm,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    cellMain: { fontFamily: FontFamily.uiSemiBold, fontSize: 14, color: theme.textPrimary },
+    fixTag: { fontFamily: FontFamily.ui, fontSize: 11, color: theme.textSecondary },
+  })
+);
