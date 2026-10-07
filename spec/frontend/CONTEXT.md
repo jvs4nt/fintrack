@@ -59,7 +59,7 @@ Helpers de ano/mês (`shiftYearMonth`, `computePlanningMonth`, `YEARS`, `formatY
 
 ## useApi (`hooks/useApi.ts`)
 
-- Base: em **dev** o `useApi` usa sempre `/api` (mesma origem — sem preflight CORS). O proxy Vite (`'/api/'` em `vite.config.ts`) encaminha para a **origin** de `VITE_API_BASE_URL` (ex. Render) ou `http://localhost:3333` se a variável estiver vazia/for local. Em **produção** (build), usa `VITE_API_BASE_URL` absoluta ou fallback `http://localhost:3333/api`
+- Base: em **dev** o `useApi` usa sempre `/api` (mesma origem — sem preflight CORS). O proxy Vite (`'/api/'` em `vite.config.ts`) encaminha para a **origin** de `VITE_API_BASE_URL` (ex. Railway) ou `http://localhost:3333` se a variável estiver vazia/for local. Em **produção** (build), usa `VITE_API_BASE_URL` absoluta ou fallback `http://localhost:3333/api`
 - Função interna `fetchApi<T>(endpoint, options)` — injeta `Authorization: Bearer` da sessão Supabase
 - Retorna objeto com namespaces: `fixedIncomes`, `fixedExpenses`, `months`, `cards`, `installments`, `savings`, `dashboard`, `settings`, `agent`
 - `months.getEntries(y, m, { sync?: boolean })` — sync no servidor por padrão; `{ sync: false }` → `?sync=0`
@@ -120,7 +120,7 @@ npm run dev      # :5173
 npm run build    # dist/
 ```
 
-Env: copie `frontend/.env.example` → `frontend/.env`. **Backend local:** omita `VITE_API_BASE_URL` ou use só path relativo — `useApi` usa `/api` + proxy. **API remota (Render):** `VITE_API_BASE_URL=https://sua-api.onrender.com/api` e reinicie o Vite. CORS no backend libera automaticamente `localhost`/`127.0.0.1`/`192.168.*` e domínios `*.pages.dev` / `*.vercel.app` / `*.netlify.app`; `CORS_ORIGIN` só é necessário para domínio próprio. **Build produção:** mesma URL absoluta. Mobile Expo: `spec/mobile/CONTEXT.md`.
+Env: copie `frontend/.env.example` → `frontend/.env`. **Backend local:** omita `VITE_API_BASE_URL` ou use só path relativo — `useApi` usa `/api` + proxy. **API remota (Railway):** `VITE_API_BASE_URL=https://sua-api.up.railway.app/api` e reinicie o Vite. CORS no backend libera automaticamente `localhost`/`127.0.0.1`/`192.168.*` e domínios `*.pages.dev` / `*.vercel.app` / `*.netlify.app` / `*.up.railway.app`; `CORS_ORIGIN` só é necessário para domínio próprio. **Build produção:** mesma URL absoluta. Mobile Expo: `spec/mobile/CONTEXT.md`.
 
 ## Tema (claro / escuro)
 

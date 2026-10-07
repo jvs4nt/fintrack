@@ -1,6 +1,6 @@
 /**
  * Dev: sempre `/api` (proxy Vite → alvo em vite.config, derivado de VITE_API_BASE_URL ou :3333).
- * Evita CORS/preflight OPTIONS ao apontar .env para API remota (Render).
+ * Evita CORS/preflight OPTIONS ao apontar .env para API remota (Railway).
  * Produção: URL absoluta de VITE_API_BASE_URL ou fallback local.
  */
 export function resolveApiBase(): string {
