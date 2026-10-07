@@ -37,7 +37,7 @@ const LOCAL_DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\
 
 /** Hostings estáticos populares — libera deploy/previews sem precisar atualizar CORS_ORIGIN a cada subdomínio. */
 const STATIC_HOSTING_ORIGIN =
-  /^https:\/\/[\w-]+(\.[\w-]+)*\.(pages\.dev|vercel\.app|netlify\.app)$/;
+  /^https:\/\/[\w-]+(\.[\w-]+)*\.(pages\.dev|vercel\.app|netlify\.app|up\.railway\.app)$/;
 
 function corsOrigin(
   origin: string | undefined,

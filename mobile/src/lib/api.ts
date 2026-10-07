@@ -81,7 +81,7 @@ function buildLocalDevApiBase(host: string, rawEnv: string): string {
 /**
  * - Emulador Android: `http://10.0.2.2:3333/api`.
  * - Dev (Expo Go): `http://<host Metro>:3333/api` — mesmo IP do bundle, backend no Mac.
- * - Release (APK/EAS): `EXPO_PUBLIC_API_BASE_URL` intacto (ex.: Render HTTPS).
+ * - Release (APK/EAS): `EXPO_PUBLIC_API_BASE_URL` intacto (ex.: Railway HTTPS).
  */
 function resolveApiBaseUrl(): string {
   const raw = (process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_API_BASE).replace(/\/$/, '');
