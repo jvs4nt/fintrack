@@ -87,6 +87,7 @@ summary: {
 }
 monthInstallments: Installment[];  // com campos extras do backend
 sixMonthsData: { month, year, label, income, expense }[];
+topExpenses: MonthEntry[];  // 5 maiores gastos do mês
 nextDueCard.dueDate: string;
 ```
 

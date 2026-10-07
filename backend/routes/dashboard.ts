@@ -109,6 +109,11 @@ router.get('/summary/:year/:month', async (req: Request, res: Response) => {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
 
+    const topExpenses = entries
+      .filter((e) => e.type === 'expense')
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+
     const sixMonthsData = monthTargets.map((t, index) => {
       const monthEntries = sixMonthEntries[index];
       const monthIncome = monthEntries
@@ -143,6 +148,7 @@ router.get('/summary/:year/:month', async (req: Request, res: Response) => {
           }
         : null,
       lastEntries,
+      topExpenses,
       sixMonthsData,
       monthInstallments,
     });

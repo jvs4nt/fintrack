@@ -1023,6 +1023,34 @@ body {
   margin-bottom: var(--spacing-lg);
 }
 
+.dashboard-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.dashboard-charts-row .chart-container {
+  margin-bottom: 0;
+}
+
+.chart-empty-state {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+  padding: var(--spacing-md) 0;
+}
+
+.recharts-line-chart-wrap,
+.recharts-bar-chart-wrap {
+  width: 100%;
+  max-height: 220px;
+}
+
+.recharts-bar-chart-wrap {
+  max-height: none;
+}
+
 .dashboard-agent-shortcut {
   display: flex;
   justify-content: space-between;
@@ -1753,6 +1781,12 @@ html.theme-transition *::after {
     padding: var(--spacing-md);
     max-width: 100%;
     box-sizing: border-box;
+  }
+
+  .dashboard-charts-row {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
   }
 
   .line-chart {

@@ -5,6 +5,7 @@ import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { MonthNavigator } from '@/components/MonthNavigator';
 import { PageShell } from '@/components/PageShell';
 import { SixMonthLines } from '@/components/SixMonthLines';
+import { TopExpensesBars } from '@/components/TopExpensesBars';
 import { createThemedStyles, useTheme } from '@/src/theme/ThemeContext';
 import { FontFamily } from '@/constants/Typography';
 import { FEATURE_PAYMENTS } from '@/src/config/features';
@@ -84,7 +85,8 @@ export default function DashboardScreen() {
   }
 
   const dash = summary;
-  const { summary: s, nextDueCard, lastEntries, sixMonthsData, monthInstallments } = dash;
+  const { summary: s, nextDueCard, lastEntries, topExpenses, sixMonthsData, monthInstallments } =
+    dash;
   const monthBalance = FEATURE_PAYMENTS ? s.netBalance : s.balance;
 
   return (
@@ -192,6 +194,9 @@ export default function DashboardScreen() {
 
         <Text style={styles.sectionTitle}>Ganhos vs gastos (6 meses)</Text>
         <SixMonthLines data={sixMonthsData} />
+
+        <Text style={styles.sectionTitle}>Maiores gastos do mês</Text>
+        <TopExpensesBars entries={topExpenses} />
 
         <Text style={styles.sectionTitle}>Últimos lançamentos</Text>
         <View style={styles.tableCard}>

@@ -25,7 +25,7 @@
 - Ao trocar de mês, os dados anteriores ficam visíveis esmaecidos (`.dashboard-body.is-refreshing`) até a resposta chegar; respostas antigas são descartadas; os números animam do valor anterior ao novo
 - Card destaque: `summary.balance` (ganhos − gastos); com `FEATURE_PAYMENTS`, `summary.netBalance` (− parcelas)
 - Tabela **Parcelas do mês** (`monthInstallments`) e card `nextDueCard` — só com `FEATURE_PAYMENTS`
-- Cards ganhos/gastos/saldo, gráfico de linhas 6 meses (ganhos verde / gastos vermelho), últimos 5 `lastEntries`
+- Cards ganhos/gastos/saldo, gráficos Recharts (6 meses ganhos/gastos + top 5 `topExpenses` do mês), últimos 5 `lastEntries`
 - Saldo em destaque e cards de ganhos/gastos/saldo contam de 0 até o valor ao abrir ([`AnimatedNumber`](../frontend/src/components/AnimatedNumber.tsx) + [`useCountUp`](../frontend/src/hooks/useCountUp.ts): easing out-quart, cards escalonados em 100ms, valor final direto com `prefers-reduced-motion`; leitor de tela recebe só o valor final)
 
 ## Months
@@ -92,7 +92,8 @@
 | `.btn`, `.btn-primary`, `.btn-danger`, `.btn-sm` | ações |
 | `.form-group`, `.form-label`, `.form-input`, `.form-select` | formulários |
 | `.stat-card`, `.stat-value`, `.stat-label` | métricas dashboard |
-| `.line-chart`, `.chart-pie` | gráficos SVG/CSS puros |
+| `.dashboard-charts-row`, `.chart-container` | gráficos Recharts no Dashboard |
+| `.line-chart-legend`, `.chart-pie` | legenda dashboard / pizza Savings (CSS) |
 | `.credit-card-visual` | cartão estilizado |
 | `.agent-chat-container`, `.agent-bubble` | chat |
 | `.loading`, `.error-message` | estados |

@@ -117,6 +117,7 @@ Igual a incomes + **`paymentMethod`** obrigatório no POST + `POST /:id/propagat
   };
   nextDueCard: { name, dueDate, daysUntilDue } | null;
   lastEntries: MonthEntry[];  // 5 mais recentes por date
+  topExpenses: MonthEntry[];  // 5 maiores gastos do mês (por amount)
   sixMonthsData: { month, year, label, income, expense }[];
   monthInstallments: Installment[];  // enriquecidas
 }

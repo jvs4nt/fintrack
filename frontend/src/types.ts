@@ -90,6 +90,7 @@ export interface DashboardSummary {
     daysUntilDue: number;
   } | null;
   lastEntries: MonthEntry[];
+  topExpenses: MonthEntry[];
   sixMonthsData: {
     month: number;
     year: number;

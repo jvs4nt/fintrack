@@ -6,6 +6,8 @@ import AnimatedNumber from '../components/AnimatedNumber';
 import MonthNavigator from '../components/MonthNavigator';
 import { FEATURE_PAYMENTS } from '../config/features';
 import { YearMonth } from '../lib/yearMonth';
+import { SixMonthLineChart } from '../components/charts/SixMonthLineChart';
+import { TopExpensesBarChart } from '../components/charts/TopExpensesBarChart';
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -90,40 +92,9 @@ function Dashboard({
     );
   }
 
-  const { summary, nextDueCard, lastEntries, sixMonthsData, monthInstallments } = data;
+  const { summary, nextDueCard, lastEntries, topExpenses, sixMonthsData, monthInstallments } =
+    data;
   const monthBalance = FEATURE_PAYMENTS ? summary.netBalance : summary.balance;
-
-  const chartW = 400;
-  const chartH = 200;
-  const chartPadL = 8;
-  const chartPadR = 8;
-  const chartPadT = 12;
-  const chartPadB = 32;
-  const plotW = chartW - chartPadL - chartPadR;
-  const plotH = chartH - chartPadT - chartPadB;
-  const chartBaseY = chartPadT + plotH;
-  const chartMaxY = Math.max(1, ...sixMonthsData.flatMap((m) => [m.income, m.expense]));
-  const chartStepX = sixMonthsData.length > 1 ? plotW / (sixMonthsData.length - 1) : 0;
-
-  function chartPoint(index: number, value: number) {
-    const x = chartPadL + index * chartStepX;
-    const y = chartBaseY - (value / chartMaxY) * plotH;
-    return { x, y };
-  }
-
-  const incomePolyline = sixMonthsData
-    .map((m, i) => {
-      const { x, y } = chartPoint(i, m.income);
-      return `${x},${y}`;
-    })
-    .join(' ');
-
-  const expensePolyline = sixMonthsData
-    .map((m, i) => {
-      const { x, y } = chartPoint(i, m.expense);
-      return `${x},${y}`;
-    })
-    .join(' ');
 
   return (
     <div>
@@ -237,58 +208,15 @@ function Dashboard({
           </div>
         )}
 
-        <div className="chart-container">
-          <h3 className="chart-title">📈 Ganhos vs Gastos (Últimos 6 meses)</h3>
-          <div className="line-chart-legend">
-            <span className="legend-item">
-              <span className="legend-swatch income" aria-hidden />
-              Ganhos
-            </span>
-            <span className="legend-item">
-              <span className="legend-swatch expense" aria-hidden />
-              Gastos
-            </span>
+        <div className="dashboard-charts-row">
+          <div className="chart-container">
+            <h3 className="chart-title">📈 Ganhos vs Gastos (Últimos 6 meses)</h3>
+            <SixMonthLineChart data={sixMonthsData} />
           </div>
-          <svg
-            className="line-chart"
-            viewBox={`0 0 ${chartW} ${chartH}`}
-            role="img"
-            aria-label="Gráfico de linhas: ganhos e gastos nos últimos 6 meses">
-            <line
-              x1={chartPadL}
-              y1={chartBaseY}
-              x2={chartPadL + plotW}
-              y2={chartBaseY}
-              className="line-chart-axis"
-            />
-            <polyline points={incomePolyline} className="line-chart-line income" fill="none" />
-            <polyline points={expensePolyline} className="line-chart-line expense" fill="none" />
-            {sixMonthsData.map((month, index) => {
-              const incomePt = chartPoint(index, month.income);
-              const expensePt = chartPoint(index, month.expense);
-              return (
-                <g key={`${month.year}-${month.month}`}>
-                  <circle
-                    cx={incomePt.x}
-                    cy={incomePt.y}
-                    r={4}
-                    className="line-chart-point income">
-                    <title>{`${month.label} — Ganhos: ${formatCurrency(month.income)}`}</title>
-                  </circle>
-                  <circle
-                    cx={expensePt.x}
-                    cy={expensePt.y}
-                    r={4}
-                    className="line-chart-point expense">
-                    <title>{`${month.label} — Gastos: ${formatCurrency(month.expense)}`}</title>
-                  </circle>
-                  <text x={incomePt.x} y={chartH - 6} className="line-chart-label">
-                    {month.label}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
+          <div className="chart-container">
+            <h3 className="chart-title">💸 Maiores gastos do mês</h3>
+            <TopExpensesBarChart entries={topExpenses} />
+          </div>
         </div>
 
         <div className="table-container">

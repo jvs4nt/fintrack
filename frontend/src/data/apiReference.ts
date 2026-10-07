@@ -530,6 +530,7 @@ export const API_SECTIONS: ApiSection[] = [
   },
   "nextDueCard": { "name", "dueDate", "daysUntilDue" } | null,
   "lastEntries": MonthEntry[],       // 5 mais recentes
+  "topExpenses": MonthEntry[],       // 5 maiores gastos do mês
   "sixMonthsData": { "month", "year", "label", "income", "expense" }[],
   "monthInstallments": Installment[] // enriquecidas
 }`,
