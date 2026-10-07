@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useEffect, useState } from 'react';
-import { AccessibilityInfo, StyleProp, ViewStyle } from 'react-native';
+import { useCallback } from 'react';
+import { StyleProp, ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -8,8 +8,11 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-const DURATION_MS = 240;
-const OFFSET_Y = 10;
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
+
+const DURATION_MS = 220;
+const OFFSET_Y = 8;
+const SCALE_FROM = 0.985;
 
 type Props = {
   children: React.ReactNode;
@@ -21,25 +24,14 @@ type Props = {
  * Não usa `animation` nas Tabs do Expo SDK 54 (bugs conhecidos com shift/fade).
  */
 export function TabScreenTransition({ children, style }: Props) {
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const reduceMotion = useReduceMotion();
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
-
-  useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((v) => {
-      if (mounted) setReduceMotion(v);
-    });
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
-    return () => {
-      mounted = false;
-      sub.remove();
-    };
-  }, []);
+  const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
   }));
 
   useFocusEffect(
@@ -47,25 +39,24 @@ export function TabScreenTransition({ children, style }: Props) {
       if (reduceMotion) {
         opacity.value = 1;
         translateY.value = 0;
+        scale.value = 1;
         return () => {};
       }
 
       opacity.value = 0;
       translateY.value = OFFSET_Y;
-      opacity.value = withTiming(1, {
-        duration: DURATION_MS,
-        easing: Easing.out(Easing.cubic),
-      });
-      translateY.value = withTiming(0, {
-        duration: DURATION_MS,
-        easing: Easing.out(Easing.cubic),
-      });
+      scale.value = SCALE_FROM;
+      const timing = { duration: DURATION_MS, easing: Easing.out(Easing.cubic) };
+      opacity.value = withTiming(1, timing);
+      translateY.value = withTiming(0, timing);
+      scale.value = withTiming(1, timing);
 
       return () => {
         opacity.value = 0;
         translateY.value = OFFSET_Y;
+        scale.value = SCALE_FROM;
       };
-    }, [opacity, translateY, reduceMotion])
+    }, [opacity, translateY, scale, reduceMotion])
   );
 
   return (

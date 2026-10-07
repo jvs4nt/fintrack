@@ -1,11 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as Haptics from 'expo-haptics';
 import { Tabs, Redirect } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { Platform, View } from 'react-native';
 import { FinTrackTabBar } from '@/components/FinTrackTabBar';
 import { useTheme } from '@/src/theme/ThemeContext';
-import { FontFamily } from '@/constants/Typography';
 import { useAuth } from '@/src/context/AuthContext';
 import { SelectedMonthProvider } from '@/src/context/SelectedMonthContext';
 import { FEATURE_PAYMENTS, FEATURE_SAVINGS } from '@/src/config/features';
@@ -56,27 +54,9 @@ export default function AppLayout() {
   return (
     <SelectedMonthProvider>
       <Tabs
-        screenListeners={{
-          tabPress: () => {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          },
-        }}
         tabBar={(props) => <FinTrackTabBar {...props} iosBlur={iosBlur} />}
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: theme.accentPrimary,
-          tabBarInactiveTintColor: theme.textMuted,
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontFamily: FontFamily.uiMedium,
-          },
-          tabBarItemStyle: {
-            paddingVertical: 0,
-          },
-          tabBarStyle: {
-            backgroundColor: 'transparent',
-            borderTopWidth: 0,
-          },
         }}>
         <Tabs.Screen
           name="index"
